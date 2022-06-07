@@ -1,0 +1,12 @@
+<launch>
+    <node pkg="kalman_pos" type="kalman_pos_node" name="kalman_pos1" output="screen">
+        <!--
+        <param name="pose_topic" type="string" value="gps/nova/current_pose" />
+        -->
+        <param name="pose_topic" type="string" value="gps/duro/current_pose" />
+        <param name="imu_topic" type="string" value="gps/duro/imu" />
+        <param name="est_topic" type="string" value="estimated_pose" />
+        <param name="est_debug_topic" type="string" value="estimated_debug_pose" />
+        <param name="debug" value="true" />
+    </node>
+</launch>
