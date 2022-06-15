@@ -4,6 +4,16 @@ project(kalman_pos)
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11 -o2)
 
+set(CMAKE_PREFIX_PATH _PATH "/opt/ros/melodic;${CMAKE_MODULE_PATH}")
+
+find_package(catkin REQUIRED COMPONENTS ${BUILD_DEPENDS})
+
+find_package(Boost REQUIRED COMPONENTS system)
+
+include_directories(include
+  ${catkin_INCLUDE_DIRS}
+)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -13,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   autoware_msgs
+  tf
 )
 
 ###################################
@@ -42,6 +53,28 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+set(HEADERS
+    ${HEADERS}
+    include/CombinedVehicleModel.h
+    include/DynamicVehicleModel.h
+    include/KinematicVehicleModel.h
+)
+
+# Local source files here
+SET(SOURCES
+    ${SOURCES}
+    src/CombinedVehicleModel.cpp
+    src/DynamicVehicleModel.cpp
+    src/KinematicVehicleModel.cpp
+    )
+
+add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp)
+add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp)
+add_library(KinematicVehicleModel src/KinematicVehicleModel.cpp)
+
+target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel)
+
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/marathon_waypoint.cpp
@@ -58,7 +91,7 @@ include_directories(
 add_executable(kalman_pos_node src/kalman_pos_node.cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(kalman_pos_node ${catkin_LIBRARIES})
+target_link_libraries(kalman_pos_node CombinedVehicleModel ${catkin_LIBRARIES})
 
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(kalman_pos_no_aw src/kalman_pos_no_aw.cpp)
