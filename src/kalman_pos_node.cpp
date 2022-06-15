@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "sensor_msgs/Imu.h"
-#include "autoware_msgs/VehicleStatus.h"
+#include <autoware_msgs/VehicleStatus.h>
 #include "std_msgs/Float32.h"
 #include "std_msgs/String.h"
 #include <sstream>
