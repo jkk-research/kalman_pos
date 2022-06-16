@@ -45,7 +45,7 @@ double dynYawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredV
 			pPrevModelStates_s.yawRate_d *
 			(1 - pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lVehicleSpeed_d * pVehicleParameters_s.jz_d))
 			+
-			pPrevMeasuredValues_s.steeringAngle_d * pTs_d * pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d * pVehicleParameters_s.jz_d;
+			pPrevMeasuredValues_s.steeringAngle_d * pTs_d * pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d / pVehicleParameters_s.jz_d;
 	}
 	else {
 		lReturnValue_d = 0;
