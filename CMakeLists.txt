@@ -4,15 +4,13 @@ project(kalman_pos)
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11 -o2)
 
-set(CMAKE_PREFIX_PATH _PATH "/opt/ros/melodic;${CMAKE_MODULE_PATH}")
+# set(CMAKE_PREFIX_PATH _PATH "/opt/ros/melodic;${CMAKE_MODULE_PATH}")
+# 
+# find_package(catkin REQUIRED COMPONENTS ${BUILD_DEPENDS})
+# 
+# find_package(Boost REQUIRED COMPONENTS system)
 
-find_package(catkin REQUIRED COMPONENTS ${BUILD_DEPENDS})
 
-find_package(Boost REQUIRED COMPONENTS system)
-
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -53,20 +51,20 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-set(HEADERS
-    ${HEADERS}
-    include/CombinedVehicleModel.h
-    include/DynamicVehicleModel.h
-    include/KinematicVehicleModel.h
-)
-
-# Local source files here
-SET(SOURCES
-    ${SOURCES}
-    src/CombinedVehicleModel.cpp
-    src/DynamicVehicleModel.cpp
-    src/KinematicVehicleModel.cpp
-    )
+# set(HEADERS
+#     ${HEADERS}
+#     include/CombinedVehicleModel.h
+#     include/DynamicVehicleModel.h
+#     include/KinematicVehicleModel.h
+# )
+# 
+# # Local source files here
+# SET(SOURCES
+#     ${SOURCES}
+#     src/CombinedVehicleModel.cpp
+#     src/DynamicVehicleModel.cpp
+#     src/KinematicVehicleModel.cpp
+#     )
 
 add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp)
 add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp)
