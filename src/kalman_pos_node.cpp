@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     n_private.param<std::string>("est_debug_topic", estimated_debug_pose, "estimated_debug_pose");
     n_private.param<bool>("debug", debug, false);
     n_private.param<int>("loop_rate_hz", loop_rate_hz, 10);
-    n_private.param<int>("estimation_method", estimation_method, 1);
+    n_private.param<int>("estimation_method", estimation_method, 0);
     ROS_INFO_STREAM("kalman_pos_node started | " << pose_topic << " | debug: " << debug);
     
     ros::Publisher est_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_pose, 1000);
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
-    ros::Rate loop_rate(loop_rate_hz); 
+    ros::Rate loop_rate(loop_rate); // 10 Hz
 
     gPoseMsgArrived_b = false;
     gIMUMsgArrived_b = false;
@@ -99,18 +99,18 @@ int main(int argc, char **argv)
 
         lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
 
-        lCombinedVehicleModel.setPrevMeasuredValues();
+        //lCombinedVehicleModel.setPrevMeasuredValues();
         lCombinedVehicleModel.setMeasuredValuesGNSS(gPositionMsg.pose.position.x, gPositionMsg.pose.position.y, gPositionMsg.pose.position.z, lTmpYaw_d);
         lCombinedVehicleModel.setMeasuredValuesIMU(gIMUMsg.linear_acceleration.x, gIMUMsg.linear_acceleration.y, gIMUMsg.linear_acceleration.z, gIMUMsg.angular_velocity.x, gIMUMsg.angular_velocity.y, gIMUMsg.angular_velocity.z);
         lCombinedVehicleModel.setMeasuredValuesVehicleState(gVehicleStatusMsg.angle, gVehicleStatusMsg.speed);
               
         if (lFirstIteration) {
             lCombinedVehicleModel.setPrevMeasuredValues();
-            lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gIMUMsg.linear_acceleration.x, gIMUMsg.linear_acceleration.y);
+            lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gVehicleStatusMsg.speed, 0);
             lFirstIteration = false;
         }
-        lCombinedVehicleModel.setPrevModelStates();
-        lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz);
+
+        lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz, eEstimationMode::model, eGNSSState::rtk);
         lCombinedVehicleModel.getModelStates(&lCurrentModelStates_s);
 
         est_pose_msg.header.stamp = ros::Time::now();

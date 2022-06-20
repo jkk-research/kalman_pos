@@ -5,9 +5,9 @@ project(kalman_pos)
 add_compile_options(-std=c++11 -o2)
 
 # set(CMAKE_PREFIX_PATH _PATH "/opt/ros/melodic;${CMAKE_MODULE_PATH}")
-# 
+ 
 # find_package(catkin REQUIRED COMPONENTS ${BUILD_DEPENDS})
-# 
+ 
 # find_package(Boost REQUIRED COMPONENTS system)
 
 
@@ -51,12 +51,17 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# set(HEADERS
-#     ${HEADERS}
-#     include/CombinedVehicleModel.h
-#     include/DynamicVehicleModel.h
-#     include/KinematicVehicleModel.h
-# )
+#set(HEADERS
+#    ${HEADERS}
+#    include/VehicleModelTypeDef.h
+#    include/CombinedVehicleModel.h
+#    include/DynamicVehicleModel.h
+#    include/KinematicVehicleModel.h
+#    include/DynamicVehicleModelEKF.h
+#    include/KinematicVehicleModelEKF.h
+#    include/DynamicVehicleModelEKFwoGNSS.h
+#    include/KinematicVehicleModelEKFwoGNSS.h
+#)
 # 
 # # Local source files here
 # SET(SOURCES
@@ -66,11 +71,15 @@ include_directories(
 #     src/KinematicVehicleModel.cpp
 #     )
 
-add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp)
-add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp)
-add_library(KinematicVehicleModel src/KinematicVehicleModel.cpp)
+add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp ./include/VehicleModelTypeDef.h)
+add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
+add_library(KinematicVehicleModel src/KinematicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
+add_library(DynamicVehicleModelEKF src/DynamicVehicleModelEKF.cpp ./include/VehicleModelTypeDef.h)
+add_library(KinematicVehicleModelEKF src/KinematicVehicleModelEKF.cpp ./include/VehicleModelTypeDef.h)
+add_library(DynamicVehicleModelEKFwoGNSS src/DynamicVehicleModelEKFwoGNSS.cpp ./include/VehicleModelTypeDef.h)
+add_library(KinematicVehicleModelEKFwoGNSS src/KinematicVehicleModelEKFwoGNSS.cpp ./include/VehicleModelTypeDef.h)
 
-target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel)
+target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel DynamicVehicleModelEKF KinematicVehicleModelEKF DynamicVehicleModelEKFwoGNSS KinematicVehicleModelEKFwoGNSS)
 
 
 ## Declare a C++ library

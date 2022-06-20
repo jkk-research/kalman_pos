@@ -2,39 +2,19 @@
 #ifndef COMBINED_VEHICLE_MODEL
 #define COMBINED_VEHICLE_MODEL
 
-typedef struct vehicleParameters {
-    double c1_d     = 40000;
-    double c2_d     = 24000;
-    double m_d      = 1920;
-    double jz_d     = 2700;
-    double l1_d     = 1.1615;
-    double l2_d     = 1.5385;
-    double swr_d    = 1;
-} sVehicleParameters;
-    
-typedef struct measuredValues {
-    double steeringAngle_d              = 0; // rad
-    double vehicleSpeed_d               = 0; // m/s
-    double longitudinalAcceleration_d   = 0; // m/s^2
-    double lateralAcceleration_d        = 0; // m/s^2
-    double verticalAcceleration_d       = 0; // m/s^2
-    double rollRate_d                   = 0; // rad/s
-    double pitchRate_d                  = 0; // rad/s
-    double yawRate_d                    = 0; // rad/s
-    double positionX_d                  = 0; // m
-    double positionY_d                  = 0; // m
-    double positionZ_d                  = 0; // m
-    double yawAngle_d                   = 0; // rad
-} sMeasuredValues;
+#include "VehicleModelTypeDef.h"
 
-typedef struct modelStates {
-    double beta_d                = 0; // rad
-    double yawRate_d             = 0; // rad/s
-    double yawAngle_d            = 0; // rad
-    double lateralAcceleration_d = 0; //m/s^2
-    double positionX_d           = 0; // m
-    double positionY_d           = 0; // m
-} sModelStates;
+#include "DynamicVehicleModel.h"
+#include "DynamicVehicleModelEKF.h"
+#include "DynamicVehicleModelEKFwoGNSS.h"
+#include "KinematicVehicleModel.h"
+#include "KinematicVehicleModelEKF.h"
+#include "KinematicVehicleModelEKFwoGNSS.h"
+
+using namespace boost::numeric::ublas;
+
+enum class eEstimationMode { model = 0, ekf = 1, model_ekf = 2, ekf_ekf_wognss = 3 };
+enum class eGNSSState {off = 0, pseudorange = 1, rtk_float = 2, rtk = 3};
 
 class cCombinedVehicleModel {
 private:
@@ -44,20 +24,37 @@ private:
     sMeasuredValues     iPrevMeasuredValues_s;
     sModelStates        iModelStates_s;
     sModelStates        iPrevModelStates_s;
+    matrix<double>      iPDynEKF_m;
+    matrix<double>      iQDynEKF_m;
+    matrix<double>      iRDynEKF_m;
+    matrix<double>      iPKinEKF_m;
+    matrix<double>      iQKinEKF_m;
+    matrix<double>      iRKinEKF_m;
+    matrix<double>      iPDynEKFwoGNSS_m;
+    matrix<double>      iQDynEKFwoGNSS_m;
+    matrix<double>      iRDynEKFwoGNSS_m;
+    matrix<double>      iPKinEKFwoGNSS_m;
+    matrix<double>      iQKinEKFwoGNSS_m;
+    matrix<double>      iRKinEKFwoGNSS_m;
+    matrix<double>      iPrevPDynEKF_m;
+    matrix<double>      iPrevPKinEKF_m;
+    matrix<double>      iPrevPDynEKFwoGNSS_m;
+    matrix<double>      iPrevPKinEKFwoGNSS_m;
 
 public:
     // Public functions
     cCombinedVehicleModel();
     ~cCombinedVehicleModel();
+    void initEKFMatrices(void);
+    void setPrevEKFMatrices(void);
     void initVehicleParameters(void);
     void setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d);
     void setMeasuredValuesGNSS(double pPositionX_d, double pPositionY_d, double pPositionZ_d, double pYawAngle_d);
     void setMeasuredValuesIMU(double pLongitudinalAcceleration_d, double pLateralAcceleration_d, double pVerticalAcceleration_d, double pRollRate_d, double pPitchRate_d, double pYawRate_d);
     void setPrevMeasuredValues(void);
-    void setModelStates(double pBeta_d, double pYawRate_d, double pYawAngle_d, double pLateralAcceleration_d, double pPositionX_d, double pPositionY_d);
+    void setModelStates(double pBeta_d, double pYawRate_d, double pYawAngle_d, double pLateralAcceleration_d, double pPositionX_d, double pPositionY_d, double pLateralVelocity_d, double pLongitudinalVelocity_d);
     void setPrevModelStates(void);
-    void iterateModel(double pTs_d);
+    void iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState);
     void getModelStates(sModelStates* pOutModelStates_s);
 };
 #endif
-
