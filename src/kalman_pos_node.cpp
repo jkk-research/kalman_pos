@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
-    ros::Rate loop_rate(loop_rate); // 10 Hz
+    ros::Rate loop_rate(loop_rate_hz); 
 
     gPoseMsgArrived_b = false;
     gIMUMsgArrived_b = false;
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
             lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gIMUMsg.linear_acceleration.x, gIMUMsg.linear_acceleration.y);
             lFirstIteration = false;
         }
-
+        lCombinedVehicleModel.setPrevModelStates();
         lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz);
         lCombinedVehicleModel.getModelStates(&lCurrentModelStates_s);
 
