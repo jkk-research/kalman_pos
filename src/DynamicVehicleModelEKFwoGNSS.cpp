@@ -376,14 +376,14 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lK_m = prec_prod(ltmpPPreMultHT_m, (-(prec_prod(ltmpHMultPPre_m, trans(lH_m)) + prec_prod(ltmpMMultR_m, trans(lM_m)))));
 	lxPro_v = lxPre_v + prec_prod(lK_m, (ly_v - lh_v));
 
-	pOutModelStates_s->beta_d = lxPro_v(0);
-	pOutModelStates_s->yawRate_d = lxPro_v(1);
-	pOutModelStates_s->yawAngle_d = lxPro_v(2);
-	pOutModelStates_s->positionX_d = lxPro_v(3);
-	pOutModelStates_s->positionY_d = lxPro_v(4);
-	pOutModelStates_s->lateralAcceleration_d = lLateralAcc_d;
-	pOutModelStates_s->lateralVelocity_d = lLateralVelocity_d;
-	pOutModelStates_s->longitudinalVelocity_d = lLongitudinalVelocity_d;
+	pOutModelStates_s.beta_d = lxPro_v(0);
+	pOutModelStates_s.yawRate_d = lxPro_v(1);
+	pOutModelStates_s.yawAngle_d = lxPro_v(2);
+	pOutModelStates_s.positionX_d = lxPro_v(3);
+	pOutModelStates_s.positionY_d = lxPro_v(4);
+	pOutModelStates_s.lateralAcceleration_d = lLateralAcc_d;
+	pOutModelStates_s.lateralVelocity_d = lLateralVelocity_d;
+	pOutModelStates_s.longitudinalVelocity_d = lLongitudinalVelocity_d;
 
 	pOutP_m = prec_prod((lI_m - prec_prod(lK_m, lH_m)), lPPre_m);
 }
