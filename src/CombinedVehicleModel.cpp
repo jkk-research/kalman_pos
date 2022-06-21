@@ -370,7 +370,7 @@ void cCombinedVehicleModel::setPrevMeasuredValues() {
     iPrevMeasuredValues_s.yawRate_d                  = iMeasuredValues_s.yawRate_d;
 }
 
-void cCombinedVehicleModel::setModelStates(double pBeta_d, double pYawRate_d, double pYawAngle_d, double pLateralAcceleration_d, double pPositionX_d, double pPositionY_d, double pLateralVelocity_d, double pLongitudinalVelocity_d) {
+void cCombinedVehicleModel::setModelStates(double pBeta_d, double pYawRate_d, double pYawAngle_d, double pLateralAcceleration_d, double pPositionX_d, double pPositionY_d, double pLongitudinalVelocity_d, double pLateralVelocity_d) {
     iModelStates_s.beta_d                 = pBeta_d;
     iModelStates_s.lateralAcceleration_d  = pLateralAcceleration_d;
     iModelStates_s.positionX_d            = pPositionX_d;
@@ -390,6 +390,17 @@ void cCombinedVehicleModel::setPrevModelStates(void) {
     iPrevModelStates_s.yawRate_d              = iModelStates_s.yawRate_d;
     iPrevModelStates_s.lateralVelocity_d      = iModelStates_s.lateralVelocity_d;
     iPrevModelStates_s.longitudinalVelocity_d = iModelStates_s.longitudinalVelocity_d;
+
+    ROS_INFO_STREAM("set prev state: beta" << iModelStates_s.beta_d  
+        << " ay: " << iModelStates_s.lateralAcceleration_d 
+        << " x: " << iModelStates_s.positionX_d 
+        << " y: " << iModelStates_s.positionY_d
+        << " yaw_a: " << iModelStates_s.yawAngle_d
+        << " yaw_r: " << iModelStates_s.yawRate_d
+        << " v_x: " << iModelStates_s.lateralVelocity_d
+        << " v_y: " << iModelStates_s.longitudinalVelocity_d
+    );
+
 }
 
 void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState) {
@@ -417,7 +428,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = kinLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
 
-            setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLateralSpeed_d, lLongitudinalSpeed_d);
+            setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
         else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState >= eGNSSState::rtk_float)) {
@@ -476,7 +487,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lLongitudinalSpeed_d    = dynLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = dynLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
 
-            setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLateralSpeed_d, lLongitudinalSpeed_d);
+            setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
         else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState >= eGNSSState::rtk_float)) {

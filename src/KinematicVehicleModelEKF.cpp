@@ -8,6 +8,9 @@ double kinEKFLongitudinalVelocityCalculation(sVehicleParameters pVehicleParamete
 
 	lReturnValue_d = pPrevMeasuredValues_s.longitudinalAcceleration_d * pTs_d + pPrevModelStates_s.longitudinalVelocity_d;
 
+	ROS_INFO_STREAM("calc vx prevx: " << pPrevMeasuredValues_s.longitudinalVelocity_d << " ax: " << pPrevMeasuredValues_s.longitudinalAcceleration_d << " Ts: " << pTs_d);
+
+
 	return lReturnValue_d;
 }
 
@@ -15,6 +18,8 @@ double kinEKFLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s,
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = pPrevMeasuredValues_s.lateralAcceleration_d * pTs_d + pPrevModelStates_s.lateralVelocity_d;
+
+	ROS_INFO_STREAM("calc vy prevy: " << pPrevMeasuredValues_s.lateralVelocity_d << " prevay: " << pPrevMeasuredValues_s.lateralAcceleration_d << " Ts: " << pTs_d);
 
 	return lReturnValue_d;
 }
