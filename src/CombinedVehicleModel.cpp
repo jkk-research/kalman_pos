@@ -1,4 +1,5 @@
 #include "CombinedVehicleModel.h"
+#include "ros/ros.h"
 
 cCombinedVehicleModel::cCombinedVehicleModel() {
     initEKFMatrices();
@@ -436,7 +437,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                 iQKinEKF_m, 
                 iRKinEKF_m);
 
-            ROS_INFO_STREAM("beta: " << iModelStates_s.beta_d << " ay: " << iModelStates_s.lateralAcceleration_d << "vx" << iModelStates_s.longitudinalVelocity_d << "vy" << iModelStates_s.lateralalVelocity_d << "yaw_a" << iModelStates_s.yawAngle_d << "yaw_r" << iModelStates_s.yawRate_d << "x" << iModelStates_s.positionX_d << "y" << iModelStates_s.positionY_d);
+            ROS_INFO_STREAM("beta: " << iModelStates_s.beta_d << " ay: " << iModelStates_s.lateralAcceleration_d << " vx: " << iModelStates_s.longitudinalVelocity_d << " vy: " << iModelStates_s.lateralVelocity_d << " yaw_a: " << iModelStates_s.yawAngle_d << " yaw_r: " << iModelStates_s.yawRate_d << " x: " << iModelStates_s.positionX_d << " y: " << iModelStates_s.positionY_d);
             setPrevMeasuredValues();
         }
         else {

@@ -1,4 +1,5 @@
 #include "KinematicVehicleModelEKF.h"
+#include "ros/ros.h"
 
 #include <math.h>
 
@@ -148,11 +149,17 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lh_v(3) = lPositionY_d;
 	lh_v(4) = lYawRate_d;
 
+	ROS_INFO_STREAM("h vx: " << lh_v(0) << " vy: " << lh_v(1) << " yaw_r: " << lh_v(4) << " x: " << lh_v(2) << " y: " << lh_v(3));
+
+
 	lxPre_v(0) = lLongitudinalVelocity_d;
 	lxPre_v(1) = lLateralVelocity_d;
 	lxPre_v(2) = lPositionX_d;
 	lxPre_v(3) = lPositionY_d;
 	lxPre_v(4) = lYawAngle_d;
+
+	ROS_INFO_STREAM("xpre vx: " << lxPre_v(0) << " vy: " << lxPre_v(1) << " yaw_a: " << lxPre_v(4) << " x: " << lxPre_v(2) << " y: " << lxPre_v(3));
+
 
 	ly_v(0) = lMesBasedLongitudinalVelocity_d;
 	ly_v(1) = lMesBasedLateralVelocity_d;
