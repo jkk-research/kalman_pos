@@ -1,4 +1,5 @@
 #include "DynamicVehicleModelEKFwoGNSS.h"
+#include "MatrixInverse.hpp"
 
 #include <math.h>
 
@@ -174,7 +175,7 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lxPre_v(1) = lYawRate_d;
 	lxPre_v(2) = lYawAngle_d;
 	lxPre_v(3) = lPositionX_d;
-	lxPre_v(4) = lPositionX_d;
+	lxPre_v(4) = lPositionY_d;
 
 	ly_v(0) = lMesYawRate_d;
 	ly_v(1) = lMesYawAngle_d;
@@ -366,6 +367,10 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	matrix<double> ltmpHMultPPre_m(3, 5);
 	matrix<double> ltmpMMultR_m(3, 3);
 	matrix<double> ltmpPPreMultHT_m(5, 3);
+	matrix<double> ltmpMMultRMultMT_m(3, 3);
+	matrix<double> ltmpHMultPPreMultHT_m(3, 3);
+	matrix<double> ltmpSumMatrix_m(3, 3);
+	matrix<double> ltmpInvMatrix_m(3, 3);
 
 	ltmpFMultPrevP_m = prec_prod(lF_m, pPrevP_m);
 	ltmpLMultQ_m = prec_prod(lL_m, pQ_m);
@@ -373,7 +378,11 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lPPre_m = prec_prod(ltmpFMultPrevP_m, trans(lF_m)) + prec_prod(ltmpLMultQ_m, trans(lL_m));
 	ltmpHMultPPre_m = prec_prod(lH_m, lPPre_m);
 	ltmpPPreMultHT_m = prec_prod(lPPre_m, trans(lH_m));
-	lK_m = prec_prod(ltmpPPreMultHT_m, (-(prec_prod(ltmpHMultPPre_m, trans(lH_m)) + prec_prod(ltmpMMultR_m, trans(lM_m)))));
+	ltmpMMultRMultMT_m = prec_prod(ltmpMMultR_m, trans(lM_m));
+	ltmpHMultPPreMultHT_m = prec_prod(ltmpHMultPPre_m, trans(lH_m));
+	ltmpSumMatrix_m = ltmpHMultPPreMultHT_m + ltmpMMultRMultMT_m;
+	InvertMatrix(ltmpSumMatrix_m, ltmpInvMatrix_m);
+	lK_m = prec_prod(ltmpPPreMultHT_m, ltmpInvMatrix_m);
 	lxPro_v = lxPre_v + prec_prod(lK_m, (ly_v - lh_v));
 
 	pOutModelStates_s.beta_d = lxPro_v(0);

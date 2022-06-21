@@ -1,5 +1,5 @@
 #include "KinematicVehicleModelEKF.h"
-#include "ros/ros.h"
+#include "MatrixInverse.hpp"
 
 #include <math.h>
 
@@ -8,9 +8,6 @@ double kinEKFLongitudinalVelocityCalculation(sVehicleParameters pVehicleParamete
 
 	lReturnValue_d = pPrevMeasuredValues_s.longitudinalAcceleration_d * pTs_d + pPrevModelStates_s.longitudinalVelocity_d;
 
-	ROS_INFO_STREAM("calc vx prevx: " << pPrevMeasuredValues_s.longitudinalVelocity_d << " ax: " << pPrevMeasuredValues_s.longitudinalAcceleration_d << " Ts: " << pTs_d);
-
-
 	return lReturnValue_d;
 }
 
@@ -18,8 +15,6 @@ double kinEKFLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s,
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = pPrevMeasuredValues_s.lateralAcceleration_d * pTs_d + pPrevModelStates_s.lateralVelocity_d;
-
-	ROS_INFO_STREAM("calc vy prevy: " << pPrevMeasuredValues_s.lateralVelocity_d << " prevay: " << pPrevMeasuredValues_s.lateralAcceleration_d << " Ts: " << pTs_d);
 
 	return lReturnValue_d;
 }
@@ -154,17 +149,11 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lh_v(3) = lPositionY_d;
 	lh_v(4) = lYawRate_d;
 
-	ROS_INFO_STREAM("h vx: " << lh_v(0) << " vy: " << lh_v(1) << " yaw_r: " << lh_v(4) << " x: " << lh_v(2) << " y: " << lh_v(3));
-
-
 	lxPre_v(0) = lLongitudinalVelocity_d;
 	lxPre_v(1) = lLateralVelocity_d;
 	lxPre_v(2) = lPositionX_d;
 	lxPre_v(3) = lPositionY_d;
 	lxPre_v(4) = lYawAngle_d;
-
-	ROS_INFO_STREAM("xpre vx: " << lxPre_v(0) << " vy: " << lxPre_v(1) << " yaw_a: " << lxPre_v(4) << " x: " << lxPre_v(2) << " y: " << lxPre_v(3));
-
 
 	ly_v(0) = lMesBasedLongitudinalVelocity_d;
 	ly_v(1) = lMesBasedLateralVelocity_d;
@@ -278,13 +267,13 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lF_m(2, 1) = 0;
 	lF_m(2, 2) = 1;
 	lF_m(2, 3) = 0;
-	lF_m(2, 4) = pTs_d * (-lLongitudinalVelocity_d) * sin(lPrevYawAngle_d);
+	lF_m(2, 4) = pTs_d * (-lPrevLongitudinalVelocity_d) * sin(lPrevYawAngle_d);
 
 	lF_m(3, 0) = 0;
 	lF_m(3, 1) = pTs_d * sin(lPrevYawAngle_d);
 	lF_m(3, 2) = 0;
 	lF_m(3, 3) = 1;
-	lF_m(3, 4) = pTs_d * (lLateralVelocity_d) * cos(lPrevYawAngle_d);
+	lF_m(3, 4) = pTs_d * (lPrevLateralVelocity_d) * cos(lPrevYawAngle_d);
 
 	lF_m(4, 0) = 0;
 	lF_m(4, 1) = 0;
@@ -317,7 +306,7 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lH_m(3, 4) = 0;
 
 	// TODO: tan or sin (it have to be checked)?
-	lH_m(4, 0) = pVehicleParameters_s.l2_d * sin(lBeta_d);
+	lH_m(4, 0) = pVehicleParameters_s.l2_d * tan(lBeta_d);
 	lH_m(4, 1) = 0;
 	lH_m(4, 2) = 0;
 	lH_m(4, 3) = 0;
@@ -328,6 +317,10 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	matrix<double> ltmpHMultPPre_m(5, 5);
 	matrix<double> ltmpMMultR_m(5, 5);
 	matrix<double> ltmpPPreMultHT_m(5, 5);
+	matrix<double> ltmpMMultRMultMT_m(5, 5);
+	matrix<double> ltmpHMultPPreMultHT_m(5, 5);
+	matrix<double> ltmpSumMatrix_m(5, 5);
+	matrix<double> ltmpInvMatrix_m(5, 5);
 
 	ltmpFMultPrevP_m = prec_prod(lF_m, pPrevP_m);
 	ltmpLMultQ_m = prec_prod(lL_m, pQ_m);
@@ -335,7 +328,11 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lPPre_m = prec_prod(ltmpFMultPrevP_m, trans(lF_m)) + prec_prod(ltmpLMultQ_m, trans(lL_m));
 	ltmpHMultPPre_m = prec_prod(lH_m, lPPre_m);
 	ltmpPPreMultHT_m = prec_prod(lPPre_m, trans(lH_m));
-	lK_m = prec_prod(ltmpPPreMultHT_m, (-(prec_prod(ltmpHMultPPre_m, trans(lH_m)) + prec_prod(ltmpMMultR_m, trans(lM_m)))));
+	ltmpMMultRMultMT_m = prec_prod(ltmpMMultR_m, trans(lM_m));
+	ltmpHMultPPreMultHT_m = prec_prod(ltmpHMultPPre_m, trans(lH_m));
+	ltmpSumMatrix_m = ltmpHMultPPreMultHT_m + ltmpMMultRMultMT_m;
+	InvertMatrix(ltmpSumMatrix_m, ltmpInvMatrix_m);
+	lK_m = prec_prod(ltmpPPreMultHT_m, ltmpInvMatrix_m);
 	lxPro_v = lxPre_v + prec_prod(lK_m, (ly_v - lh_v));
 
 	pOutModelStates_s.beta_d				  = lBeta_d;
@@ -348,4 +345,5 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	pOutModelStates_s.lateralVelocity_d       = lxPro_v(1);
 
 	pOutP_m = prec_prod((lI_m - prec_prod(lK_m, lH_m)), lPPre_m);
+
 }

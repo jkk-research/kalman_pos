@@ -1,4 +1,6 @@
 #include "DynamicVehicleModelEKF.h"
+#include "MatrixInverse.hpp"
+#include "ros/ros.h"
 
 #include <math.h>
 
@@ -170,19 +172,19 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 	lh_v(1) = lYawAngle_d;
 	lh_v(2) = lLateralAcc_d;
 	lh_v(3) = lPositionX_d;
-	lh_v(4) = lPositionX_d;
+	lh_v(4) = lPositionY_d;
 
 	lxPre_v(0) = lBeta_d;
 	lxPre_v(1) = lYawRate_d;
 	lxPre_v(2) = lYawAngle_d;
 	lxPre_v(3) = lPositionX_d;
-	lxPre_v(4) = lPositionX_d;
+	lxPre_v(4) = lPositionY_d;
 
 	ly_v(0) = lMesYawRate_d;
 	ly_v(1) = lMesYawAngle_d;
 	ly_v(2) = lMesLateralAcc_d;
 	ly_v(3) = lMesPositionX_d;
-	ly_v(4) = lMesPositionX_d;
+	ly_v(4) = lMesPositionY_d;
 
 	lL_m(0, 0) = 1;
 	lL_m(0, 1) = 0;
@@ -403,29 +405,37 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 		lH_m(4, 4) = 0;
 	}
 	
-	matrix<double> ltmpFMultPrevP_m(5, 5); 
+	matrix<double> ltmpFMultPrevP_m(5, 5);
 	matrix<double> ltmpLMultQ_m(5, 5);
 	matrix<double> ltmpHMultPPre_m(5, 5);
 	matrix<double> ltmpMMultR_m(5, 5);
 	matrix<double> ltmpPPreMultHT_m(5, 5);
+	matrix<double> ltmpMMultRMultMT_m(5, 5);
+	matrix<double> ltmpHMultPPreMultHT_m(5, 5);
+	matrix<double> ltmpSumMatrix_m(5, 5);
+	matrix<double> ltmpInvMatrix_m(5, 5);
 
 	ltmpFMultPrevP_m = prec_prod(lF_m, pPrevP_m);
-	ltmpLMultQ_m     = prec_prod(lL_m, pQ_m);
-	ltmpMMultR_m	 = prec_prod(lM_m, pR_m);
-	lPPre_m			 = prec_prod(ltmpFMultPrevP_m, trans(lF_m)) + prec_prod(ltmpLMultQ_m, trans(lL_m));
-	ltmpHMultPPre_m  = prec_prod(lH_m, lPPre_m);
+	ltmpLMultQ_m = prec_prod(lL_m, pQ_m);
+	ltmpMMultR_m = prec_prod(lM_m, pR_m);
+	lPPre_m = prec_prod(ltmpFMultPrevP_m, trans(lF_m)) + prec_prod(ltmpLMultQ_m, trans(lL_m));
+	ltmpHMultPPre_m = prec_prod(lH_m, lPPre_m);
 	ltmpPPreMultHT_m = prec_prod(lPPre_m, trans(lH_m));
-	lK_m			 = prec_prod(ltmpPPreMultHT_m, (-(prec_prod(ltmpHMultPPre_m, trans(lH_m)) + prec_prod(ltmpMMultR_m, trans(lM_m)))));
-	lxPro_v			 = lxPre_v + prec_prod(lK_m, (ly_v - lh_v));
+	ltmpMMultRMultMT_m = prec_prod(ltmpMMultR_m, trans(lM_m));
+	ltmpHMultPPreMultHT_m = prec_prod(ltmpHMultPPre_m, trans(lH_m));
+	ltmpSumMatrix_m = ltmpHMultPPreMultHT_m + ltmpMMultRMultMT_m;
+	InvertMatrix(ltmpSumMatrix_m, ltmpInvMatrix_m);
+	lK_m = prec_prod(ltmpPPreMultHT_m, ltmpInvMatrix_m);
+	lxPro_v = lxPre_v + prec_prod(lK_m, (ly_v - lh_v));
 	
 	pOutModelStates_s.beta_d				  = lxPro_v(0);
 	pOutModelStates_s.yawRate_d				  = lxPro_v(1);
 	pOutModelStates_s.yawAngle_d			  = lxPro_v(2);
 	pOutModelStates_s.positionX_d			  = lxPro_v(3);
 	pOutModelStates_s.positionY_d			  = lxPro_v(4);
-	pOutModelStates_s.lateralAcceleration_d  = lLateralAcc_d;
-	pOutModelStates_s.lateralVelocity_d	  = lLateralVelocity_d;
-	pOutModelStates_s.longitudinalVelocity_d = lLongitudinalVelocity_d;
+	pOutModelStates_s.lateralAcceleration_d   = lLateralAcc_d;
+	pOutModelStates_s.lateralVelocity_d	  	  = lLateralVelocity_d;
+	pOutModelStates_s.longitudinalVelocity_d  = lLongitudinalVelocity_d;
 
 	pOutP_m = prec_prod((lI_m - prec_prod(lK_m, lH_m)), lPPre_m);
 }

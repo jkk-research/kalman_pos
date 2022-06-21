@@ -391,7 +391,7 @@ void cCombinedVehicleModel::setPrevModelStates(void) {
     iPrevModelStates_s.lateralVelocity_d      = iModelStates_s.lateralVelocity_d;
     iPrevModelStates_s.longitudinalVelocity_d = iModelStates_s.longitudinalVelocity_d;
 
-    ROS_INFO_STREAM("set prev state: beta" << iModelStates_s.beta_d  
+    /*ROS_INFO_STREAM("set prev state: beta" << iModelStates_s.beta_d  
         << " ay: " << iModelStates_s.lateralAcceleration_d 
         << " x: " << iModelStates_s.positionX_d 
         << " y: " << iModelStates_s.positionY_d
@@ -399,7 +399,7 @@ void cCombinedVehicleModel::setPrevModelStates(void) {
         << " yaw_r: " << iModelStates_s.yawRate_d
         << " v_x: " << iModelStates_s.lateralVelocity_d
         << " v_y: " << iModelStates_s.longitudinalVelocity_d
-    );
+    );*/
 
 }
 
@@ -413,7 +413,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
     double lLateralSpeed_d        = 0;
     double lLongitudinalSpeed_d   = 0;
     
-    if (iPrevMeasuredValues_s.vehicleSpeed_d < 25) {
+    if (iPrevMeasuredValues_s.vehicleSpeed_d < 3) {
         if ((pEstimationMode_e == eEstimationMode::model) || ((pEstimationMode_e == eEstimationMode::model_ekf) && (pGNSSState < eGNSSState::rtk_float))) {
             // Kinematic model
             setPrevModelStates();
@@ -448,7 +448,6 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                 iQKinEKF_m, 
                 iRKinEKF_m);
 
-            ROS_INFO_STREAM("beta: " << iModelStates_s.beta_d << " ay: " << iModelStates_s.lateralAcceleration_d << " vx: " << iModelStates_s.longitudinalVelocity_d << " vy: " << iModelStates_s.lateralVelocity_d << " yaw_a: " << iModelStates_s.yawAngle_d << " yaw_r: " << iModelStates_s.yawRate_d << " x: " << iModelStates_s.positionX_d << " y: " << iModelStates_s.positionY_d);
             setPrevMeasuredValues();
         }
         else {
