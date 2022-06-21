@@ -305,7 +305,7 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lH_m(3, 4) = 0;
 
 	// TODO: tan or sin (it have to be checked)?
-	lH_m(4, 0) = pVehicleParameters_s.l2_d * tan(lBeta_d);
+	lH_m(4, 0) = pVehicleParameters_s.l2_d * sin(lBeta_d);
 	lH_m(4, 1) = 0;
 	lH_m(4, 2) = 0;
 	lH_m(4, 3) = 0;
@@ -327,13 +327,13 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	lxPro_v = lxPre_v + prec_prod(lK_m, (ly_v - lh_v));
 
 	pOutModelStates_s.beta_d				  = lBeta_d;
-	pOutModelStates_s.yawRate_d			  = lYawRate_d;
+	pOutModelStates_s.yawRate_d				  = lYawRate_d;
 	pOutModelStates_s.yawAngle_d			  = lxPro_v(4);
 	pOutModelStates_s.positionX_d			  = lxPro_v(2);
 	pOutModelStates_s.positionY_d			  = lxPro_v(3);
-	pOutModelStates_s.lateralAcceleration_d  = lLateralAcc_d;
-	pOutModelStates_s.longitudinalVelocity_d = lxPro_v(0);
-	pOutModelStates_s.lateralVelocity_d      = lxPro_v(1);
+	pOutModelStates_s.lateralAcceleration_d   = lLateralAcc_d;
+	pOutModelStates_s.longitudinalVelocity_d  = lxPro_v(0);
+	pOutModelStates_s.lateralVelocity_d       = lxPro_v(1);
 
 	pOutP_m = prec_prod((lI_m - prec_prod(lK_m, lH_m)), lPPre_m);
 }
