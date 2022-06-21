@@ -132,7 +132,7 @@ double dynEKFPositionYCalculation(sVehicleParameters pVehicleParameters_s, sMeas
 	return lReturnValue_d;
 }
 
-void dynEKFEstimate(sModelStates* pOutModelStates_s, matrix<double> &pOutP_m, sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, matrix<double> &pPrevP_m, matrix<double> &pQ_m, matrix<double> &pR_m) {
+void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, matrix<double> &pPrevP_m, matrix<double> &pQ_m, matrix<double> &pR_m) {
 	double lYawRate_d			   = dynEKFYawRateCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lYawAngle_d			   = dynEKFYawAngleCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lPrevYawAngle_d		   = pPrevModelStates_s.yawAngle_d;

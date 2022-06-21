@@ -72,11 +72,14 @@ int main(int argc, char **argv)
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
-    ros::Rate loop_rate(loop_rate); // 10 Hz
+    ros::Rate loop_rate(loop_rate_hz); // 10 Hz
 
     gPoseMsgArrived_b = false;
     gIMUMsgArrived_b = false;
     gVehicleStatusMsgArrived_b = false;
+
+    lCombinedVehicleModel.initVehicleParameters();
+    lCombinedVehicleModel.initEKFMatrices();
 
     while (ros::ok())
     {
@@ -105,12 +108,13 @@ int main(int argc, char **argv)
         lCombinedVehicleModel.setMeasuredValuesVehicleState(gVehicleStatusMsg.angle, gVehicleStatusMsg.speed);
               
         if (lFirstIteration) {
+            lCombinedVehicleModel.setPrevEKFMatrices();
             lCombinedVehicleModel.setPrevMeasuredValues();
-            lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gVehicleStatusMsg.speed, 0);
+            lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gPositionMsg.pose.position.x, gPositionMsg.pose.position.y, gVehicleStatusMsg.speed, 0);
             lFirstIteration = false;
         }
 
-        lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz, eEstimationMode::model, eGNSSState::rtk);
+        lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz, eEstimationMode::ekf, eGNSSState::rtk);
         lCombinedVehicleModel.getModelStates(&lCurrentModelStates_s);
 
         est_pose_msg.header.stamp = ros::Time::now();
