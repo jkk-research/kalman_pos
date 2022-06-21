@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
-    ros::Rate loop_rate(loop_rate_hz); // 10 Hz
+    ros::Rate loop_rate(loop_rate_hz);
 
     gPoseMsgArrived_b = false;
     gIMUMsgArrived_b = false;
