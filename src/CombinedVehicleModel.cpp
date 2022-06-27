@@ -414,7 +414,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
     double lLongitudinalSpeed_d   = 0;
     
     if (iPrevMeasuredValues_s.vehicleSpeed_d < 3) {
-        if ((pEstimationMode_e == eEstimationMode::model) || ((pEstimationMode_e == eEstimationMode::model_ekf) && (pGNSSState < eGNSSState::rtk_float))) {
+        if ((pEstimationMode_e == eEstimationMode::model)) {
             // Kinematic model
             setPrevModelStates();
             setPrevEKFMatrices();
@@ -472,7 +472,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
 
     }
     else {
-        if ((pEstimationMode_e == eEstimationMode::model) || ((pEstimationMode_e == eEstimationMode::model_ekf) && (pGNSSState < eGNSSState::rtk_float))) {
+        if ((pEstimationMode_e == eEstimationMode::model)) {
             // Dynamic model
             setPrevModelStates();
             setPrevEKFMatrices();
