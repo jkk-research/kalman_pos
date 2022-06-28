@@ -5,7 +5,7 @@
 #include "std_msgs/Float32.h"
 #include "std_msgs/String.h"
 #include <sstream>
-#include <novatel_msgs/INSPVAX.h>
+#include <novatel_gps_msgs/Inspvax.h>
 
 //#include "geometry_msgs/Vector3.h"
 //#include "geometry_msgs/Quaternion.h"
@@ -19,7 +19,7 @@ geometry_msgs::PoseStamped orig_pose_;
 geometry_msgs::PoseStamped gPositionMsg;
 sensor_msgs::Imu gIMUMsg;
 autoware_msgs::VehicleStatus gVehicleStatusMsg;
-novatel_msgs::INSPVAX gNovatelStatus;
+novatel_gps_msgs::Inspvax gNovatelStatus;
 
 bool gPoseMsgArrived_b = false;
 bool gIMUMsgArrived_b = false;
@@ -48,7 +48,7 @@ void vehicleCallback(const autoware_msgs::VehicleStatus::ConstPtr& msg)
   //ROS_INFO_STREAM("speed: " << msg->speed << " angle: " << msg->angle);
 }
 
-void novatelStatusCallback(const novatel_msgs::INSPVAX::ConstPtr& msg)
+void novatelStatusCallback(const novatel_gps_msgs::Inspvax::ConstPtr& msg)
 {
     gNovatelStatusMsgArrived_b = true;
     gNovatelStatus = *msg;
@@ -141,57 +141,59 @@ int main(int argc, char **argv)
           uint32 POSITION_TYPE_OMNISTAR_XP=59
           uint32 POSITION_TYPE_PPP_CONVERGING=73
           uint32 POSITION_TYPE_PPP=74
+          "NONE", "FIXEDPOS", "FIXEDHEIGHT", "RESERVED", "FLOATCONV",
+          "WIDELANE", "NARROWLANE", "RESERVED", "DOPPLER_VELOCITY", "RESERVED",
+          "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "SINGLE", "PSRDIFF", "WAAS", "PROPOGATED",
+          "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "RESERVED", "L1_FLOAT", "IONOFREE_FLOAT", "NARROW_FLOAT",
+          "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "RESERVED", "RESERVED", "L1_INT", "WIDE_INT",
+          "NARROW_INT", "RTK_DIRECT_INS", "INS_SBAS", "INS_PSRSP", "INS_PSRDIFF",
+          "INS_RTKFLOAT", "INS_RTKFIXED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED", "RESERVED",
+          "RESERVED", "RESERVED", "RESERVED", "PPP_CONVERGING", "PPP",
+          "OPERATIONAL", "WARNING", "OUT_OF_BOUNDS", "INS_PPP_CONVERGING", "INS_PPP",
+          "UNKNOWN", "UNKNOWN", "PPP_BASIC_CONVERGING", "PPP_BASIC", "INS_PPP_BASIC",
+          "INS_PPP_BASIC_CONVERGING"};
         */
-        switch (gNovatelStatus.position_type) {
-          case 0: //POSITION_TYPE_NONE
-              lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-              lGNSSState_e = eGNSSState::off;
-            break;
-          case 52: //POSITION_TYPE_SBAS
-              lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-              lGNSSState_e = eGNSSState::SBAS;
-            break;
-          case 53: //POSITION_TYPE_PSEUDORANGE_SINGLE_POINT
-              lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-              lGNSSState_e = eGNSSState::pseudorange;
-            break;
-          case 54: //POSITION_TYPE_PSEUDORANGE_DIFFERENTIAL
-              lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-              lGNSSState_e = eGNSSState::pseudorange;
-            break;
-          case 55: //POSITION_TYPE_RTK_FLOAT
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_float;
-            break;
-          case 56: //POSITION_TYPE_RTK_FIXED
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_fixed;
-            break;
-          case 57: //POSITION_TYPE_OMNISTAR
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_fixed;
-            break;
-          case 58: //POSITION_TYPE_OMNISTAR_HP
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_fixed;
-            break;
-          case 59: //POSITION_TYPE_OMNISTAR_XP
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_fixed;
-            break;
-          case 73: //POSITION_TYPE_PPP_CONVERGING
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_fixed;
-            break;
-          case 74: //POSITION_TYPE_PPP
-              lEstimationMode_e = eEstimationMode::ekf;
-              lGNSSState_e = eGNSSState::rtk_fixed;
-            break;
-          default:
-              lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-              lGNSSState_e = eGNSSState::off;
-            break;
+        if(gNovatelStatus.position_type ==  "NONE"){ //POSITION_TYPE_NONE
+            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+            lGNSSState_e = eGNSSState::off;
+            //ROS_INFO_STREAM(1);
         }
+        else if(gNovatelStatus.position_type ==  "INS_SBAS"){ //POSITION_TYPE_SBAS
+            lEstimationMode_e = eEstimationMode::ekf;
+            lGNSSState_e = eGNSSState::rtk_float;
+            //ROS_INFO_STREAM("INS_SBAS");
+        }
+        else if(gNovatelStatus.position_type ==  "SINGLE"){ //POSITION_TYPE_PSEUDORANGE_SINGLE_POINT
+            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+            lGNSSState_e = eGNSSState::pseudorange;
+            //ROS_INFO_STREAM(3);
+        }
+        else if(gNovatelStatus.position_type ==  "PSRDIFF"){ //POSITION_TYPE_PSEUDORANGE_DIFFERENTIAL
+            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+            lGNSSState_e = eGNSSState::pseudorange;
+            //ROS_INFO_STREAM(4);
+        }
+        else if(gNovatelStatus.position_type ==  "INS_RTKFLOAT"){ //POSITION_TYPE_RTK_FLOAT
+            lEstimationMode_e = eEstimationMode::ekf;
+            lGNSSState_e = eGNSSState::rtk_float;
+            //ROS_INFO_STREAM(5);
+        }
+        else if(gNovatelStatus.position_type ==  "INS_RTKFIXED"){ //POSITION_TYPE_RTK_FIXED
+            lEstimationMode_e = eEstimationMode::ekf;
+            lGNSSState_e = eGNSSState::rtk_fixed;
+            //ROS_INFO_STREAM(6);
+        }
+        else{
+            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+            lGNSSState_e = eGNSSState::off;
+            //ROS_INFO_STREAM("else " << gNovatelStatus.position_type);
+        } 
 
         lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz, lEstimationMode_e, lGNSSState_e);
         lCombinedVehicleModel.getModelStates(&lCurrentModelStates_s);

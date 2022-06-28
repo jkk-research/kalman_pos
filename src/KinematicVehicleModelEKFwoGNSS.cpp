@@ -145,7 +145,7 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 
 	lh_v(0) = lLongitudinalVelocity_d;
 	lh_v(1) = lLateralVelocity_d;
-	lh_v(4) = lYawRate_d;
+	lh_v(2) = lYawRate_d;
 
 	lxPre_v(0) = lLongitudinalVelocity_d;
 	lxPre_v(1) = lLateralVelocity_d;
@@ -153,11 +153,14 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lxPre_v(3) = lPositionY_d;
 	lxPre_v(4) = lYawAngle_d;
 
-	ly_v(0) = lMesBasedLongitudinalVelocity_d;
-	ly_v(1) = lMesBasedLateralVelocity_d;
-	ly_v(2) = lMesPositionX_d;
-	ly_v(3) = lMesPositionY_d;
-	ly_v(4) = lMesYawRate_d;
+ly_v(0) = lMesBasedLongitudinalVelocity_d;
+ly_v(1) = lMesBasedLateralVelocity_d;
+ly_v(2) = lMesYawRate_d;
+	//ly_v(0) = lMesBasedLongitudinalVelocity_d;
+	//ly_v(1) = lMesBasedLateralVelocity_d;
+	//ly_v(2) = lMesPositionX_d;
+	//ly_v(3) = lMesPositionY_d;
+	//ly_v(4) = lMesYawRate_d;
 
 	lL_m(0, 0) = 1;
 	lL_m(0, 1) = 0;

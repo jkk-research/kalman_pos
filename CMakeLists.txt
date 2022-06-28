@@ -21,7 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   autoware_msgs
-  novatel_msgs
+  novatel_gps_msgs
   tf
 )
 
