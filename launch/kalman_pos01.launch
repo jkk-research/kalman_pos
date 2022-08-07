@@ -10,5 +10,6 @@
         <param name="debug" value="true" />
 		<param name="loop_rate_hz" type="int" value="10" />
 		<param name="estimation_method" type="int" value="1" />
+        <param name="gnss_source" type="string" value="estimated_debug_pose" />
     </node>
 </launch>
