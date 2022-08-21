@@ -3,9 +3,13 @@
         <!--
         <param name="pose_topic" type="string" value="gps/nova/current_pose" />
         -->
+        accuracy
+
         <param name="pose_topic" type="string" value="gps/nova/current_pose" />
+        <param name="nav_sat_fix_topic" type="string" value="gps/nova/fix" />
         <param name="imu_topic" type="string" value="gps/nova/imu" />
         <param name="est_topic" type="string" value="estimated_pose" />
+        <param name="est_accuracy_topic" type="string" value="estimation_accuracy" />
         <param name="est_debug_topic" type="string" value="estimated_debug_pose" />
         <param name="debug" value="true" />
 		<param name="loop_rate_hz" type="int" value="10" />
