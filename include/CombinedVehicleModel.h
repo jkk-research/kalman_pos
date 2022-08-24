@@ -13,7 +13,7 @@
 
 using namespace boost::numeric::ublas;
 
-enum class eEstimationMode { model = 0, ekf = 1, model_ekf = 2, ekf_ekf_wognss = 3 };
+enum class eEstimationMode { model = 0,  model_ekf = 1, ekf_ekf_wognss = 2, ekf = 3};
 enum class eGNSSState {off = 0, SBAS = 1, pseudorange = 2, rtk_float = 3, rtk_fixed = 4};
 
 class cCombinedVehicleModel {

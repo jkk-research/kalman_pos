@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     ros::Publisher est_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_pose, 1000);
     ros::Publisher est_debug_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_debug_pose, 1000);
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
-    ros::Subscriber sub_nav_sat_fix = n.subscribe(pose_topic, 1000, navSatFixCallback);
+    ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
     ros::Subscriber sub_inspvax = n.subscribe("gps/nova/inspvax", 1000, novatelStatusCallback);
@@ -167,8 +167,10 @@ int main(int argc, char **argv)
                     //ROS_INFO_STREAM(1);
                 }
                 else if(gNovatelStatus.position_type ==  "INS_SBAS"){ //POSITION_TYPE_SBAS
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
+                    lEstimationMode_e = eEstimationMode::ekf;
+                    lGNSSState_e = eGNSSState::rtk_float;
+                    //lEstimationMode_e = eEstimationMode::model;
+                    //lGNSSState_e = eGNSSState::pseudorange;
                     lAccuracyScaleFactor = 5;
                     //ROS_INFO_STREAM("INS_SBAS");
                 }
@@ -197,7 +199,7 @@ int main(int argc, char **argv)
                     //ROS_INFO_STREAM(6);
                 }
                 else{
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                    lEstimationMode_e = eEstimationMode::model;
                     lGNSSState_e = eGNSSState::off;
                     lAccuracyScaleFactor = 10;
                     //ROS_INFO_STREAM("else " << gNovatelStatus.position_type);
@@ -257,7 +259,7 @@ int main(int argc, char **argv)
 
         est_pub.publish(est_pose_msg);
 
-        est_accuracy_marker.header.frame_id = "accuracy_marker";
+        est_accuracy_marker.header.frame_id = "map";
         est_accuracy_marker.header.stamp = ros::Time();
         est_accuracy_marker.ns = "est_pose";
         est_accuracy_marker.id = 0;
@@ -284,7 +286,7 @@ int main(int argc, char **argv)
         est_accuracy_marker.color.g = 1.0;
         est_accuracy_marker.color.b = 0.0;
         //only if using a MESH_RESOURCE marker type:
-        est_accuracy_marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+        //est_accuracy_marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
         accuracy_marker_pub.publish( est_accuracy_marker );
 
 

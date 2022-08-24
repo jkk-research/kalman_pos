@@ -428,6 +428,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = kinLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
 
+            ROS_INFO_STREAM("model");
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
@@ -435,7 +436,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             // Kinematic model with EKF + GNSS
             setPrevModelStates();
             setPrevEKFMatrices();
-
+            ROS_INFO_STREAM("GNSS");
             kinEKFEstimate(
                 iModelStates_s,
                 iPKinEKF_m,
@@ -452,6 +453,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
         }
         else {
             // Kinematic model with EKF without GNSS
+            ROS_INFO_STREAM("woGNSS");
             setPrevModelStates();
             setPrevEKFMatrices();
 
