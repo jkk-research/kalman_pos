@@ -259,15 +259,20 @@ int main(int argc, char **argv)
 
         est_pub.publish(est_pose_msg);
 
-        est_accuracy_marker.header.frame_id = "map";
+        est_accuracy_marker.header.frame_id = "base_link";
         est_accuracy_marker.header.stamp = ros::Time();
         est_accuracy_marker.ns = "est_pose";
         est_accuracy_marker.id = 0;
         est_accuracy_marker.type = visualization_msgs::Marker::SPHERE;
-        est_accuracy_marker.action = visualization_msgs::Marker::MODIFY;
+        est_accuracy_marker.action = visualization_msgs::Marker::ADD;
+        est_accuracy_marker.pose.position.x = 0.0;
+        est_accuracy_marker.pose.position.y = 0.0;
+        est_accuracy_marker.pose.position.z = 0.6;
+        /*
         est_accuracy_marker.pose.position.x = est_pose_msg.pose.position.x;
         est_accuracy_marker.pose.position.y = est_pose_msg.pose.position.y;
         est_accuracy_marker.pose.position.z = est_pose_msg.pose.position.z;
+        */
         est_accuracy_marker.pose.orientation.x = 0.0;
         est_accuracy_marker.pose.orientation.y = 0.0;
         est_accuracy_marker.pose.orientation.z = 0.0;
@@ -281,10 +286,10 @@ int main(int argc, char **argv)
             est_accuracy_marker.scale.y = lAccuracyScaleFactor * 10;
             est_accuracy_marker.scale.z = lAccuracyScaleFactor * 10;
         }
-        est_accuracy_marker.color.a = 1.0; // Don't forget to set the alpha!
-        est_accuracy_marker.color.r = 0.0;
-        est_accuracy_marker.color.g = 1.0;
-        est_accuracy_marker.color.b = 0.0;
+        est_accuracy_marker.color.a = 0.3; // Don't forget to set the alpha!
+        est_accuracy_marker.color.r = 0.1;
+        est_accuracy_marker.color.g = 0.8;
+        est_accuracy_marker.color.b = 0.4;
         //only if using a MESH_RESOURCE marker type:
         //est_accuracy_marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
         accuracy_marker_pub.publish( est_accuracy_marker );
