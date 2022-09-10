@@ -258,6 +258,12 @@ ly_v(2) = lMesYawRate_d;
 	lF_m(3, 3) = 1;
 	lF_m(3, 4) = pTs_d * (lPrevLateralVelocity_d)*cos(lPrevYawAngle_d);
 
+	lF_m(4, 0) = 0;
+	lF_m(4, 1) = 0;
+	lF_m(4, 2) = 0;
+	lF_m(4, 3) = 0;
+	lF_m(4, 4) = 1;
+
 	lH_m(0, 0) = 1;
 	lH_m(0, 1) = 0;
 	lH_m(0, 2) = 0;
