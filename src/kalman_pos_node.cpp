@@ -14,12 +14,15 @@
 #include "tf/transform_datatypes.h"
 //#include "LinearMath/btMatrix3x3.h"
 
+#include <tf2/buffer_core.h>
+
 #include "CombinedVehicleModel.h"
 
 geometry_msgs::PoseStamped orig_pose_;
 
 sensor_msgs::NavSatFix gNavSatFixMsg;
 geometry_msgs::PoseStamped gPositionMsg;
+geometry_msgs::PoseStamped gCoGPositionMsg;
 sensor_msgs::Imu gIMUMsg;
 autoware_msgs::VehicleStatus gVehicleStatusMsg;
 novatel_gps_msgs::Inspvax gNovatelStatus;
@@ -32,11 +35,49 @@ bool gVehicleStatusMsgArrived_b = false;
 bool gNovatelStatusMsgArrived_b = false;
 bool gDuroStatusMsgArrived_b = false;
 
+std::string gVehicleType = "leaf";
+std::string gGnssSource = "nova";
+
 void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     gPoseMsgArrived_b = true;
     orig_pose_ = *msg;
     gPositionMsg = *msg;
+
+    if (gGnssSource == "nova") {
+        if (gVehicleType == "leaf") {
+            tf2::BufferCore lBufferCore;
+
+            geometry_msgs::TransformStamped lNovaTransform;
+            lNovaTransform.header.frame_id = "map";
+            lNovaTransform.child_frame_id = "nova";
+            lNovaTransform.transform.translation.x = gPositionMsg.pose.position.x;
+            lNovaTransform.transform.translation.y = gPositionMsg.pose.position.y;
+            lNovaTransform.transform.translation.z = gPositionMsg.pose.position.z;
+            lNovaTransform.transform.rotation = gPositionMsg.pose.orientation;
+            lBufferCore.setTransform(lNovaTransform, "default_authority", true);
+
+            geometry_msgs::TransformStamped lCoGTransform;
+            lCoGTransform.header.frame_id = "nova";
+            lCoGTransform.child_frame_id = "cog";
+            lCoGTransform.transform.translation.x = 0.208;
+            lCoGTransform.transform.translation.y = -0.408;
+            lCoGTransform.transform.translation.z = -1.278;
+            lCoGTransform.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, 0);
+            lBufferCore.setTransform(lCoGTransform, "default_authority", true);
+
+            geometry_msgs::TransformStamped lTsLookup;
+            lTsLookup = lBufferCore.lookupTransform("cog", "map", ros::Time(0));
+            gCoGPositionMsg.pose.position.x = lTsLookup.transform.translation.x;
+            gCoGPositionMsg.pose.position.y = lTsLookup.transform.translation.y;
+            gCoGPositionMsg.pose.position.z = lTsLookup.transform.translation.z;
+            gCoGPositionMsg.pose.orientation= lTsLookup.transform.rotation;
+        } else {
+            gCoGPositionMsg = gPositionMsg;
+        }
+    } else {
+        gCoGPositionMsg = gPositionMsg;
+    }
     //ROS_INFO_STREAM("x: " << msg->pose.position.x << " y: " << msg->pose.position.y);
 }
 
@@ -78,7 +119,6 @@ int main(int argc, char **argv)
     bool debug;
     int loop_rate_hz;
     int estimation_method;
-    std::string gnss_source;
     cCombinedVehicleModel lCombinedVehicleModel;
     bool lFirstIteration = true;
 
@@ -91,10 +131,11 @@ int main(int argc, char **argv)
     n_private.param<std::string>("est_topic", estimated_pose, "estimated_pose");
     n_private.param<std::string>("est_debug_topic", estimated_debug_pose, "estimated_debug_pose");
     n_private.param<std::string>("est_accuracy_topic", estimatation_accuracy, "estimation_accuracy");
+    n_private.param<std::string>("vehicle_type", gVehicleType, "leaf");
     n_private.param<bool>("debug", debug, false);
     n_private.param<int>("loop_rate_hz", loop_rate_hz, 10);
     n_private.param<int>("estimation_method", estimation_method, 0);
-    n_private.param<std::string>("gnss_source", gnss_source, "nova");
+    n_private.param<std::string>("gnss_source", gGnssSource, "nova");
     ROS_INFO_STREAM("kalman_pos_node started | " << pose_topic << " | debug: " << debug);
     
 
@@ -139,27 +180,27 @@ int main(int argc, char **argv)
             double lTmpYaw_d;
 
             tf::Quaternion lTmpQuternion_c(
-                gPositionMsg.pose.orientation.x,
-                gPositionMsg.pose.orientation.y,
-                gPositionMsg.pose.orientation.z,
-                gPositionMsg.pose.orientation.w);
+                gCoGPositionMsg.pose.orientation.x,
+                gCoGPositionMsg.pose.orientation.y,
+                gCoGPositionMsg.pose.orientation.z,
+                gCoGPositionMsg.pose.orientation.w);
             tf::Matrix3x3 lTmpMatrix(lTmpQuternion_c);
 
             lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
 
             //lCombinedVehicleModel.setPrevMeasuredValues();
-            lCombinedVehicleModel.setMeasuredValuesGNSS(gPositionMsg.pose.position.x, gPositionMsg.pose.position.y, gPositionMsg.pose.position.z, lTmpYaw_d);
+            lCombinedVehicleModel.setMeasuredValuesGNSS(gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gCoGPositionMsg.pose.position.z, lTmpYaw_d);
             lCombinedVehicleModel.setMeasuredValuesIMU(gIMUMsg.linear_acceleration.x, gIMUMsg.linear_acceleration.y, gIMUMsg.linear_acceleration.z, gIMUMsg.angular_velocity.x, gIMUMsg.angular_velocity.y, gIMUMsg.angular_velocity.z);
             lCombinedVehicleModel.setMeasuredValuesVehicleState(gVehicleStatusMsg.angle, gVehicleStatusMsg.speed);
                 
             if (lFirstIteration) {
                 lCombinedVehicleModel.setPrevEKFMatrices();
                 lCombinedVehicleModel.setPrevMeasuredValues();
-                lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gPositionMsg.pose.position.x, gPositionMsg.pose.position.y, gVehicleStatusMsg.speed, 0);
+                lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gVehicleStatusMsg.speed, 0);
                 lFirstIteration = false;
             }
 
-            if (gnss_source == "nova") {
+            if (gGnssSource == "nova") {
                 if(gNovatelStatus.position_type ==  "NONE"){ //POSITION_TYPE_NONE
                     lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                     lGNSSState_e = eGNSSState::off;
