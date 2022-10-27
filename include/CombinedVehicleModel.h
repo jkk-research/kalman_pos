@@ -11,6 +11,8 @@
 #include "KinematicVehicleModelEKF.h"
 #include "KinematicVehicleModelEKFwoGNSS.h"
 
+#include <sstream>
+
 using namespace boost::numeric::ublas;
 
 enum class eEstimationMode { model = 0,  model_ekf = 1, ekf_ekf_wognss = 2, ekf = 3};
@@ -43,11 +45,11 @@ private:
 
 public:
     // Public functions
-    cCombinedVehicleModel();
+    cCombinedVehicleModel(std::string pVehicleType_s);
     ~cCombinedVehicleModel();
     void initEKFMatrices(void);
     void setPrevEKFMatrices(void);
-    void initVehicleParameters(void);
+    void initVehicleParameters(std::string pVehicleType_s);
     void setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d);
     void setMeasuredValuesGNSS(double pPositionX_d, double pPositionY_d, double pPositionZ_d, double pYawAngle_d);
     void setMeasuredValuesIMU(double pLongitudinalAcceleration_d, double pLateralAcceleration_d, double pVerticalAcceleration_d, double pRollRate_d, double pPitchRate_d, double pYawRate_d);

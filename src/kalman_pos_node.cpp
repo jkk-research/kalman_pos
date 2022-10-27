@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     bool debug;
     int loop_rate_hz;
     int estimation_method;
-    cCombinedVehicleModel lCombinedVehicleModel;
+    cCombinedVehicleModel lCombinedVehicleModel("leaf");
     bool lFirstIteration = true;
 
     ros::init(argc, argv, "kalman_pos_node");
@@ -146,8 +146,12 @@ int main(int argc, char **argv)
     ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
-    ros::Subscriber sub_inspvax = n.subscribe("gps/nova/inspvax", 1000, novatelStatusCallback);
-    ros::Subscriber sub_durostatus = n.subscribe("gps/duro/status_string", 1000, duroStatusStringCallback);
+    if (gGnssSource == "nova") {
+        ros::Subscriber sub_inspvax = n.subscribe("gps/nova/inspvax", 1000, novatelStatusCallback);
+    }
+    if (gGnssSource == "duro") {
+        ros::Subscriber sub_durostatus = n.subscribe("gps/duro/status_string", 1000, duroStatusStringCallback);
+    }
     ros::Rate loop_rate(loop_rate_hz); // 10 Hz
 
     gPoseMsgArrived_b = false;
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
     gNovatelStatusMsgArrived_b = false;
     gDuroStatusMsgArrived_b = false;
 
-    lCombinedVehicleModel.initVehicleParameters();
+    lCombinedVehicleModel.initVehicleParameters(gVehicleType);
     lCombinedVehicleModel.initEKFMatrices();
 
     while (ros::ok())
@@ -171,7 +175,7 @@ int main(int argc, char **argv)
 
         int lAccuracyScaleFactor = 10;
     
-        if (gPoseMsgArrived_b && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b && gNovatelStatusMsgArrived_b) {
+        if (gPoseMsgArrived_b && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
             
             sModelStates lCurrentModelStates_s;
 
@@ -201,85 +205,111 @@ int main(int argc, char **argv)
             }
 
             if (gGnssSource == "nova") {
-                if(gNovatelStatus.position_type ==  "NONE"){ //POSITION_TYPE_NONE
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::off;
-                    lAccuracyScaleFactor = 10;
-                    //ROS_INFO_STREAM(1);
-                }
-                else if(gNovatelStatus.position_type ==  "INS_SBAS"){ //POSITION_TYPE_SBAS
-                    lEstimationMode_e = eEstimationMode::ekf;
-                    lGNSSState_e = eGNSSState::rtk_float;
-                    //lEstimationMode_e = eEstimationMode::model;
-                    //lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                    //ROS_INFO_STREAM("INS_SBAS");
-                }
-                else if(gNovatelStatus.position_type ==  "SINGLE"){ //POSITION_TYPE_PSEUDORANGE_SINGLE_POINT
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                    //ROS_INFO_STREAM(3);
-                }
-                else if(gNovatelStatus.position_type ==  "PSRDIFF"){ //POSITION_TYPE_PSEUDORANGE_DIFFERENTIAL
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                    //ROS_INFO_STREAM(4);
-                }
-                else if(gNovatelStatus.position_type ==  "INS_RTKFLOAT"){ //POSITION_TYPE_RTK_FLOAT
-                    lEstimationMode_e = eEstimationMode::ekf;
-                    lGNSSState_e = eGNSSState::rtk_float;
-                    lAccuracyScaleFactor = 2.5;
-                    //ROS_INFO_STREAM(5);
-                }
-                else if(gNovatelStatus.position_type ==  "INS_RTKFIXED"){ //POSITION_TYPE_RTK_FIXED
-                    lEstimationMode_e = eEstimationMode::ekf;
-                    lGNSSState_e = eGNSSState::rtk_fixed;
-                    lAccuracyScaleFactor = 1;
-                    //ROS_INFO_STREAM(6);
-                }
-                else{
+                if ((!gNovatelStatusMsgArrived_b) || (estimation_method == 0)) {
                     lEstimationMode_e = eEstimationMode::model;
                     lGNSSState_e = eGNSSState::off;
                     lAccuracyScaleFactor = 10;
-                    //ROS_INFO_STREAM("else " << gNovatelStatus.position_type);
+                    //ROS_INFO_STREAM(1);
+                } else {
+                    if(gNovatelStatus.position_type ==  "NONE"){ //POSITION_TYPE_NONE
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        //ROS_INFO_STREAM(1);
+                    }
+                    else if(gNovatelStatus.position_type ==  "INS_SBAS"){ //POSITION_TYPE_SBAS
+                        lEstimationMode_e = eEstimationMode::ekf;
+                        lGNSSState_e = eGNSSState::rtk_float;
+                        //lEstimationMode_e = eEstimationMode::model;
+                        //lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                        //ROS_INFO_STREAM("INS_SBAS");
+                    }
+                    else if(gNovatelStatus.position_type ==  "SINGLE"){ //POSITION_TYPE_PSEUDORANGE_SINGLE_POINT
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                        //ROS_INFO_STREAM(3);
+                    }
+                    else if(gNovatelStatus.position_type ==  "PSRDIFF"){ //POSITION_TYPE_PSEUDORANGE_DIFFERENTIAL
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                        //ROS_INFO_STREAM(4);
+                    }
+                    else if(gNovatelStatus.position_type ==  "INS_RTKFLOAT"){ //POSITION_TYPE_RTK_FLOAT
+                        lEstimationMode_e = eEstimationMode::ekf;
+                        lGNSSState_e = eGNSSState::rtk_float;
+                        lAccuracyScaleFactor = 2.5;
+                        //ROS_INFO_STREAM(5);
+                    }
+                    else if(gNovatelStatus.position_type ==  "INS_RTKFIXED"){ //POSITION_TYPE_RTK_FIXED
+                        lEstimationMode_e = eEstimationMode::ekf;
+                        lGNSSState_e = eGNSSState::rtk_fixed;
+                        lAccuracyScaleFactor = 1;
+                        //ROS_INFO_STREAM(6);
+                    }
+                    else{
+                        lEstimationMode_e = eEstimationMode::model;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        //ROS_INFO_STREAM("else " << gNovatelStatus.position_type);
+                    }
+                }
+            } else if (gGnssSource == "duro") {
+                if ((!gDuroStatusMsgArrived_b) || (estimation_method == 0)){
+                    lEstimationMode_e = eEstimationMode::model;
+                    lGNSSState_e = eGNSSState::off;
+                    lAccuracyScaleFactor = 10;
+                } else {
+                    if (gDuroStatusMsg.data == "Invalid") {
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                    } else if (gDuroStatusMsg.data == "Single Point Position (SPP)") {
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                    }  else if (gDuroStatusMsg.data == "Differential GNSS (DGNSS)") {
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                    }  else if (gDuroStatusMsg.data == "Float RTK") {
+                        lEstimationMode_e = eEstimationMode::ekf;
+                        lGNSSState_e = eGNSSState::rtk_float;
+                        lAccuracyScaleFactor = 2.5;
+                    }  else if (gDuroStatusMsg.data == "Fixed RTK") {
+                        lEstimationMode_e = eEstimationMode::ekf;
+                        lGNSSState_e = eGNSSState::rtk_fixed;
+                        lAccuracyScaleFactor = 1;
+                    }  else if (gDuroStatusMsg.data == "Dead Reckoning (DR)") {
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                    }  else if (gDuroStatusMsg.data == "SBAS Position") {
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::pseudorange;
+                        lAccuracyScaleFactor = 5;
+                    } else {
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                    }
                 }
             } else {
-                if (gDuroStatusMsg.data == "Invalid") {
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::off;
-                    lAccuracyScaleFactor = 10;
-                } else if (gDuroStatusMsg.data == "Single Point Position (SPP)") {
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                }  else if (gDuroStatusMsg.data == "Differential GNSS (DGNSS)") {
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                }  else if (gDuroStatusMsg.data == "Float RTK") {
-                    lEstimationMode_e = eEstimationMode::ekf;
-                    lGNSSState_e = eGNSSState::rtk_float;
-                    lAccuracyScaleFactor = 2.5;
-                }  else if (gDuroStatusMsg.data == "Fixed RTK") {
-                    lEstimationMode_e = eEstimationMode::ekf;
-                    lGNSSState_e = eGNSSState::rtk_fixed;
-                    lAccuracyScaleFactor = 1;
-                }  else if (gDuroStatusMsg.data == "Dead Reckoning (DR)") {
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                }  else if (gDuroStatusMsg.data == "SBAS Position") {
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::pseudorange;
-                    lAccuracyScaleFactor = 5;
-                } else {
-                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    lGNSSState_e = eGNSSState::off;
-                    lAccuracyScaleFactor = 10;
+                switch (estimation_method) {
+                    case 0: 
+                        lEstimationMode_e = eEstimationMode::model;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        break;
+                    default:
+                        lEstimationMode_e = eEstimationMode::model;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        break;
                 }
-            } 
+            }
 
             lCombinedVehicleModel.iterateModel(1.0/loop_rate_hz, lEstimationMode_e, lGNSSState_e);
             lCombinedVehicleModel.getModelStates(&lCurrentModelStates_s);

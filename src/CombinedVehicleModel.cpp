@@ -1,9 +1,10 @@
 #include "CombinedVehicleModel.h"
 #include "ros/ros.h"
+#include <sstream>
 
-cCombinedVehicleModel::cCombinedVehicleModel() {
+cCombinedVehicleModel::cCombinedVehicleModel(std::string pVehicleType_s) {
     initEKFMatrices();
-    initVehicleParameters();
+    initVehicleParameters(pVehicleType_s);
 }
 
 cCombinedVehicleModel::~cCombinedVehicleModel() {
@@ -323,14 +324,32 @@ void cCombinedVehicleModel::setPrevEKFMatrices(void) {
     }
 }
 
-void cCombinedVehicleModel::initVehicleParameters(void) {
-    iVehicleParameters_s.c1_d   = 40000;
-    iVehicleParameters_s.c2_d   = 24000;
-    iVehicleParameters_s.m_d    = 1920;
-    iVehicleParameters_s.jz_d   = 2700;
-    iVehicleParameters_s.l1_d   = 1.1615;
-    iVehicleParameters_s.l2_d   = 1.5385;
-    iVehicleParameters_s.swr_d  = 1;
+void cCombinedVehicleModel::initVehicleParameters(std::string pVehicleType_s) {
+    if (pVehicleType_s == "leaf") {
+        iVehicleParameters_s.c1_d   = 40000;
+        iVehicleParameters_s.c2_d   = 24000;
+        iVehicleParameters_s.m_d    = 1920;
+        iVehicleParameters_s.jz_d   = 2700;
+        iVehicleParameters_s.l1_d   = 1.1615;
+        iVehicleParameters_s.l2_d   = 1.5385;
+        iVehicleParameters_s.swr_d  = 1;
+    } else if (pVehicleType_s == "SZEmission") {
+        iVehicleParameters_s.c1_d   = 40000;
+        iVehicleParameters_s.c2_d   = 24000;
+        iVehicleParameters_s.m_d    = 180;
+        iVehicleParameters_s.jz_d   = 27;
+        iVehicleParameters_s.l1_d   = 1.3 - 0.976;
+        iVehicleParameters_s.l2_d   = 0.976;
+        iVehicleParameters_s.swr_d  = 1;
+    } else {
+        iVehicleParameters_s.c1_d   = 40000;
+        iVehicleParameters_s.c2_d   = 24000;
+        iVehicleParameters_s.m_d    = 1920;
+        iVehicleParameters_s.jz_d   = 2700;
+        iVehicleParameters_s.l1_d   = 1.1615;
+        iVehicleParameters_s.l2_d   = 1.5385;
+        iVehicleParameters_s.swr_d  = 1;
+    }
 }
 
 void cCombinedVehicleModel::setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d) {
@@ -428,7 +447,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = kinLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
 
-            ROS_INFO_STREAM("model");
+            //ROS_INFO_STREAM("model");
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
@@ -436,7 +455,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             // Kinematic model with EKF + GNSS
             setPrevModelStates();
             setPrevEKFMatrices();
-            ROS_INFO_STREAM("GNSS");
+            //ROS_INFO_STREAM("GNSS");
             kinEKFEstimate(
                 iModelStates_s,
                 iPKinEKF_m,
