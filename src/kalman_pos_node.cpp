@@ -136,14 +136,26 @@ int main(int argc, char **argv)
     n_private.param<int>("loop_rate_hz", loop_rate_hz, 10);
     n_private.param<int>("estimation_method", estimation_method, 0);
     n_private.param<std::string>("gnss_source", gGnssSource, "nova");
-    ROS_INFO_STREAM("kalman_pos_node started | " << pose_topic << " | debug: " << debug);
+    ROS_INFO_STREAM("kalman_pos_node started | pose: " << pose_topic 
+                    << " | debug: " << debug 
+                    << " | nav_sat_fix: " << nav_sat_fix_topic
+                    << " | imu: " << imu_topic
+                    << " | est: " << estimated_pose
+                    << " | est_debug: " << estimated_debug_pose
+                    << " | est_accuracy: " << estimatation_accuracy
+                    << " | vehicle_type: " << gVehicleType
+                    << " | loop_rate_hz: " << loop_rate_hz
+                    << " | estimation_method: " << estimation_method
+                    << " | gnss_source: " << gGnssSource );
     
 
     ros::Publisher accuracy_marker_pub = n.advertise<visualization_msgs::Marker>( estimatation_accuracy, 1000 );
     ros::Publisher est_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_pose, 1000);
     ros::Publisher est_debug_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_debug_pose, 1000);
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
-    ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
+    if (gGnssSource == "nova"){
+        ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
+    }
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
     if (gGnssSource == "nova") {
@@ -164,6 +176,8 @@ int main(int argc, char **argv)
     lCombinedVehicleModel.initVehicleParameters(gVehicleType);
     lCombinedVehicleModel.initEKFMatrices();
 
+    ROS_INFO_STREAM("ROS::OK  " << ros::ok());
+
     while (ros::ok())
     {
         visualization_msgs::Marker est_accuracy_marker;
@@ -175,6 +189,7 @@ int main(int argc, char **argv)
 
         int lAccuracyScaleFactor = 10;
     
+        //ROS_INFO_STREAM("Pose Arrived " << gPoseMsgArrived_b << "  | IMU Arrived: " << gIMUMsgArrived_b << " | Status Arrived: " << gVehicleStatusMsgArrived_b);
         if (gPoseMsgArrived_b && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
             
             sModelStates lCurrentModelStates_s;

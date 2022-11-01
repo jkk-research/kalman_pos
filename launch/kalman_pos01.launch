@@ -1,20 +1,15 @@
 <launch>
     <node pkg="kalman_pos" type="kalman_pos_node" name="kalman_pos1" output="screen">
-        <!--
-        <param name="pose_topic" type="string" value="gps/nova/current_pose" />
-        -->
-        accuracy
-
-        <param name="pose_topic" type="string" value="gps/nova/current_pose" />
+        <param name="pose_topic" type="string" value="current_pose" />
         <param name="nav_sat_fix_topic" type="string" value="gps/nova/fix" />
-        <param name="imu_topic" type="string" value="gps/nova/imu" />
+        <param name="imu_topic" type="string" value="os_cloud_node/imu" />
         <param name="est_topic" type="string" value="estimated_pose" />
         <param name="est_accuracy_topic" type="string" value="estimation_accuracy" />
         <param name="est_debug_topic" type="string" value="estimated_debug_pose" />
         <param name="debug" value="true" />
 		<param name="loop_rate_hz" type="int" value="10" />
-		<param name="estimation_method" type="int" value="1" />
-        <param name="gnss_source" type="string" value="nova" />
-        <param name="vehicle_type" type="string" value="leaf" />
+		<param name="estimation_method" type="int" value="0" />
+        <param name="gnss_source" type="string" value="none" />
+        <param name="vehicle_type" type="string" value="SZEmission" />
     </node>
 </launch>

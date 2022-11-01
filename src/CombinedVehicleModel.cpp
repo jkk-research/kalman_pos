@@ -432,7 +432,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
     double lLateralSpeed_d        = 0;
     double lLongitudinalSpeed_d   = 0;
     
-    if (iPrevMeasuredValues_s.vehicleSpeed_d < 5) {
+    if (iPrevMeasuredValues_s.vehicleSpeed_d < 15) {
         if ((pEstimationMode_e == eEstimationMode::model)) {
             // Kinematic model
             setPrevModelStates();
@@ -447,7 +447,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = kinLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
 
-            //ROS_INFO_STREAM("model");
+            ROS_INFO_STREAM("Model  Beta: " << lBeta_d << "  YR: " << lYawRate_d << "  YA: " << lYawAngle_d << "  LA: " << lLateralAcceleration_d << "  X: " << lPositionX_d << "  Y: " << lPositionY_d << "  VX: " << lLongitudinalSpeed_d << "  VY: " << lLateralSpeed_d);
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
