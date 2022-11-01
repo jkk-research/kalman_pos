@@ -318,8 +318,14 @@ int main(int argc, char **argv)
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
                         break;
+                    case 1: 
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        break;
                     default:
-                        lEstimationMode_e = eEstimationMode::model;
+                        //lEstimationMode_e = eEstimationMode::model;
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
                         break;

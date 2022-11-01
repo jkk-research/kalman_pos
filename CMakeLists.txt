@@ -75,12 +75,13 @@ include_directories(
 add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp ./include/VehicleModelTypeDef.h)
 add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
 add_library(KinematicVehicleModel src/KinematicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
+add_library(KinematicVehicleModel2 src/KinematicVehicleModel2.cpp ./include/VehicleModelTypeDef.h)
 add_library(DynamicVehicleModelEKF src/DynamicVehicleModelEKF.cpp ./include/VehicleModelTypeDef.h)
 add_library(KinematicVehicleModelEKF src/KinematicVehicleModelEKF.cpp ./include/VehicleModelTypeDef.h)
 add_library(DynamicVehicleModelEKFwoGNSS src/DynamicVehicleModelEKFwoGNSS.cpp ./include/VehicleModelTypeDef.h)
 add_library(KinematicVehicleModelEKFwoGNSS src/KinematicVehicleModelEKFwoGNSS.cpp ./include/VehicleModelTypeDef.h)
 
-target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel DynamicVehicleModelEKF KinematicVehicleModelEKF DynamicVehicleModelEKFwoGNSS KinematicVehicleModelEKFwoGNSS)
+target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel KinematicVehicleModel2 DynamicVehicleModelEKF KinematicVehicleModelEKF DynamicVehicleModelEKFwoGNSS KinematicVehicleModelEKFwoGNSS)
 
 
 ## Declare a C++ library

@@ -8,6 +8,7 @@
 #include "DynamicVehicleModelEKF.h"
 #include "DynamicVehicleModelEKFwoGNSS.h"
 #include "KinematicVehicleModel.h"
+#include "KinematicVehicleModel2.h"
 #include "KinematicVehicleModelEKF.h"
 #include "KinematicVehicleModelEKFwoGNSS.h"
 

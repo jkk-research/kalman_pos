@@ -438,6 +438,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             setPrevModelStates();
             setPrevEKFMatrices();
 
+            
             lBeta_d                 = kinBetaCalculation(iVehicleParameters_s, iMeasuredValues_s, iModelStates_s, pTs_d);
             lYawRate_d              = kinYawRateCalculation(iVehicleParameters_s, iMeasuredValues_s, iModelStates_s, pTs_d);
             lYawAngle_d             = kinYawAngleCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
@@ -446,8 +447,19 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lPositionY_d            = kinPositionYCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = kinLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
+            
+            /*
+            lBeta_d                 = kinBetaCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lYawRate_d              = kinYawRateCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lYawAngle_d             = kinYawAngleCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lLateralAcceleration_d  = kinLateralAccCalculation2(iVehicleParameters_s, iMeasuredValues_s, lBeta_d, lYawRate_d);
+            lPositionX_d            = kinPositionXCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lPositionY_d            = kinPositionYCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lLateralSpeed_d         = kinLateralVelocityCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            */
 
-            ROS_INFO_STREAM("Model  Beta: " << lBeta_d << "  YR: " << lYawRate_d << "  YA: " << lYawAngle_d << "  LA: " << lLateralAcceleration_d << "  X: " << lPositionX_d << "  Y: " << lPositionY_d << "  VX: " << lLongitudinalSpeed_d << "  VY: " << lLateralSpeed_d);
+            //ROS_INFO_STREAM("Model  Beta: " << lBeta_d << "  YR: " << lYawRate_d << "  YA: " << lYawAngle_d << "  LA: " << lLateralAcceleration_d << "  X: " << lPositionX_d << "  Y: " << lPositionY_d << "  VX: " << lLongitudinalSpeed_d << "  VY: " << lLateralSpeed_d);
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
@@ -472,7 +484,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
         }
         else {
             // Kinematic model with EKF without GNSS
-            ROS_INFO_STREAM("woGNSS");
+            //ROS_INFO_STREAM("woGNSS");
             setPrevModelStates();
             setPrevEKFMatrices();
 
@@ -488,6 +500,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                 iQKinEKFwoGNSS_m,
                 iRKinEKFwoGNSS_m);
 
+            //ROS_INFO_STREAM("Model EKF wo GNSS Beta: " << lBeta_d << "  YR: " << lYawRate_d << "  YA: " << lYawAngle_d << "  LA: " << lLateralAcceleration_d << "  X: " << lPositionX_d << "  Y: " << lPositionY_d << "  VX: " << lLongitudinalSpeed_d << "  VY: " << lLateralSpeed_d);
             setPrevMeasuredValues();
         }
 
@@ -498,6 +511,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             setPrevModelStates();
             setPrevEKFMatrices();
 
+            
             lBeta_d                 = dynBetaCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lYawRate_d              = dynYawRateCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lYawAngle_d             = dynYawAngleCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
@@ -506,6 +520,17 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lPositionY_d            = dynPositionYCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lLongitudinalSpeed_d    = dynLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = dynLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
+            
+            /*
+            lBeta_d                 = kinBetaCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lYawRate_d              = kinYawRateCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lYawAngle_d             = kinYawAngleCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lLateralAcceleration_d  = kinLateralAccCalculation2(iVehicleParameters_s, iMeasuredValues_s, lBeta_d, lYawRate_d);
+            lPositionX_d            = kinPositionXCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lPositionY_d            = kinPositionYCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            lLateralSpeed_d         = kinLateralVelocityCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
+            */
 
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
@@ -546,6 +571,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                 iQDynEKFwoGNSS_m,
                 iRDynEKFwoGNSS_m);
 
+            //ROS_INFO_STREAM("Model EKF wo GNSS Beta: " << lBeta_d << "  YR: " << lYawRate_d << "  YA: " << lYawAngle_d << "  LA: " << lLateralAcceleration_d << "  X: " << lPositionX_d << "  Y: " << lPositionY_d << "  VX: " << lLongitudinalSpeed_d << "  VY: " << lLateralSpeed_d);
             setPrevMeasuredValues();
         }
     }
