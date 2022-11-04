@@ -161,7 +161,7 @@ int main(int argc, char **argv)
     if (gGnssSource == "nova") {
         ros::Subscriber sub_inspvax = n.subscribe("gps/nova/inspvax", 1000, novatelStatusCallback);
     }
-    if (gGnssSource == "duro") {
+    if ((gGnssSource == "duro") || (gVehicleType == "SZEmission")) {
         ros::Subscriber sub_durostatus = n.subscribe("gps/duro/status_string", 1000, duroStatusStringCallback);
     }
     ros::Rate loop_rate(loop_rate_hz); // 10 Hz
@@ -322,6 +322,53 @@ int main(int argc, char **argv)
                         lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
+                        break;
+                    case 10: 
+                        if (gVehicleType == "SZEmission") {
+                            if ((!gDuroStatusMsgArrived_b)){
+                                lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;;
+                                lGNSSState_e = eGNSSState::off;
+                                lAccuracyScaleFactor = 10;
+                            } else {
+                                if (gDuroStatusMsg.data == "Invalid") {
+                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lGNSSState_e = eGNSSState::off;
+                                    lAccuracyScaleFactor = 10;
+                                } else if (gDuroStatusMsg.data == "Single Point Position (SPP)") {
+                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lGNSSState_e = eGNSSState::pseudorange;
+                                    lAccuracyScaleFactor = 5;
+                                }  else if (gDuroStatusMsg.data == "Differential GNSS (DGNSS)") {
+                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lGNSSState_e = eGNSSState::pseudorange;
+                                    lAccuracyScaleFactor = 5;
+                                }  else if (gDuroStatusMsg.data == "Float RTK") {
+                                    lEstimationMode_e = eEstimationMode::ekf;
+                                    lGNSSState_e = eGNSSState::rtk_float;
+                                    lAccuracyScaleFactor = 2.5;
+                                }  else if (gDuroStatusMsg.data == "Fixed RTK") {
+                                    lEstimationMode_e = eEstimationMode::ekf;
+                                    lGNSSState_e = eGNSSState::rtk_fixed;
+                                    lAccuracyScaleFactor = 1;
+                                }  else if (gDuroStatusMsg.data == "Dead Reckoning (DR)") {
+                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lGNSSState_e = eGNSSState::pseudorange;
+                                    lAccuracyScaleFactor = 5;
+                                }  else if (gDuroStatusMsg.data == "SBAS Position") {
+                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lGNSSState_e = eGNSSState::pseudorange;
+                                    lAccuracyScaleFactor = 5;
+                                } else {
+                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lGNSSState_e = eGNSSState::off;
+                                    lAccuracyScaleFactor = 10;
+                                }
+                            }
+                        } else {
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                        }
                         break;
                     default:
                         //lEstimationMode_e = eEstimationMode::model;
