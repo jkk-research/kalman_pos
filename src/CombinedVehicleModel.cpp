@@ -480,6 +480,17 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                 iQKinEKF_m, 
                 iRKinEKF_m);
 
+            /*
+            ROS_INFO_STREAM("-set prev state: beta" << iModelStates_s.beta_d  
+                    << " ay: " << iModelStates_s.lateralAcceleration_d 
+                    << " x: " << iModelStates_s.positionX_d 
+                    << " y: " << iModelStates_s.positionY_d
+                    << " yaw_a: " << iModelStates_s.yawAngle_d
+                    << " yaw_r: " << iModelStates_s.yawRate_d
+                    << " v_x: " << iModelStates_s.lateralVelocity_d
+                    << " v_y: " << iModelStates_s.longitudinalVelocity_d);
+            */
+
             setPrevMeasuredValues();
         }
         else {

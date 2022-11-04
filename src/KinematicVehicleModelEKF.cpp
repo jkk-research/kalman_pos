@@ -1,6 +1,7 @@
 #include "KinematicVehicleModelEKF.h"
 #include "MatrixInverse.hpp"
 
+#include "ros/ros.h"
 #include <math.h>
 
 double kinEKFLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
@@ -119,6 +120,17 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	double lMesBasedLateralVelocity_d		= kinEKFMesBasedLateralVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
 	double lMesBasedLongitudinalVelocity_d  = kinEKFMesBasedLongitudinalVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
 	
+    /*
+	ROS_INFO_STREAM(    "--Model EKF w GNSS Beta: " << lBeta_d <<
+						"  YR: " << lYawRate_d << 
+						"  YA: " << lYawAngle_d << 
+						"  LA: " << lLateralAcc_d << 
+						"  X: " << lPositionX_d << 
+						"  Y: " << lPositionY_d << 
+						"  VX: " << lLongitudinalVelocity_d << 
+						"  VY: " << lLateralVelocity_d);
+	*/
+
 	double lMesYawRate_d			= pPrevMeasuredValues_s.yawRate_d;
 	double lMesYawAngle_d			= pPrevMeasuredValues_s.yawAngle_d;
 	double lMesLateralAcc_d			= pPrevMeasuredValues_s.lateralAcceleration_d;

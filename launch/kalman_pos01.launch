@@ -1,9 +1,9 @@
 <launch>
     <node pkg="kalman_pos" type="kalman_pos_node" name="kalman_pos1" output="screen">
-        <param name="pose_topic" type="string" value="current_pose" />
+        <param name="pose_topic" type="string" value="gps/duro/current_pose" />
         <param name="vehicle_status_topic" type="string" value= "vehicle_status" />
         <param name="nav_sat_fix_topic" type="string" value="gps/nova/fix" />
-        <param name="duro_status_string_topic" type="string" value="gps/duro/status_sring" />
+        <param name="duro_status_string_topic" type="string" value="gps/duro/status_string" />
         <param name="inspvax_topic" type="string" value="gps/nova/inspvax" />
         <param name="imu_topic" type="string" value="os_cloud_node/imu" />
         <param name="est_topic" type="string" value="estimated_pose" />
@@ -11,7 +11,7 @@
         <param name="est_debug_topic" type="string" value="estimated_debug_pose" />
         <param name="debug" value="true" />
 		<param name="loop_rate_hz" type="int" value="20" />
-		<param name="estimation_method" type="int" value="1" />
+		<param name="estimation_method" type="int" value="10" />
         <param name="gnss_source" type="string" value="none" />
         <param name="vehicle_type" type="string" value="SZEmission" />
     </node>

@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     n_private.param<std::string>("pose_topic", pose_topic, "gps/nova/current_pose");
     n_private.param<std::string>("vehicle_status_topic", vehicle_status_topic, "vehicle_status");
     n_private.param<std::string>("nav_sat_fix_topic", nav_sat_fix_topic, "gps/nova/fix");
-    n_private.param<std::string>("duro_status_string_topic", duro_status_string_topic, "gps/duro/status_sring");
+    n_private.param<std::string>("duro_status_string_topic", duro_status_string_topic, "gps/duro/status_string");
     n_private.param<std::string>("inspvax_topic", inspvax_topic, "gps/nova/inspvax" );
     n_private.param<std::string>("imu_topic", imu_topic, "gps/nova/imu");
     n_private.param<std::string>("est_topic", estimated_pose, "estimated_pose");
@@ -139,9 +139,11 @@ int main(int argc, char **argv)
     n_private.param<int>("loop_rate_hz", loop_rate_hz, 10);
     n_private.param<int>("estimation_method", estimation_method, 0);
     n_private.param<std::string>("gnss_source", gGnssSource, "nova");
-    ROS_INFO_STREAM("kalman_pos_node started | pose: " << pose_topic 
+    ROS_INFO_STREAM("kalman_pos_node started | pose: " << pose_topic
+                    << " | vehicle_status: " << vehicle_status_topic 
                     << " | debug: " << debug 
                     << " | nav_sat_fix: " << nav_sat_fix_topic
+                    << " | duro_status_string: " << duro_status_string_topic
                     << " | imu: " << imu_topic
                     << " | est: " << estimated_pose
                     << " | est_debug: " << estimated_debug_pose
@@ -156,17 +158,17 @@ int main(int argc, char **argv)
     ros::Publisher est_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_pose, 1000);
     ros::Publisher est_debug_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_debug_pose, 1000);
     ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
-    if (gGnssSource == "nova"){
+    //if (gGnssSource == "nova"){
         ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
-    }
+    //}
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
     ros::Subscriber sub_vehicle = n.subscribe(vehicle_status_topic, 1000, vehicleCallback);
-    if (gGnssSource == "nova") {
+    //if (gGnssSource == "nova") {
         ros::Subscriber sub_inspvax = n.subscribe(inspvax_topic, 1000, novatelStatusCallback);
-    }
-    if ((gGnssSource == "duro") || (gVehicleType == "SZEmission")) {
+    //}
+    //if ((gGnssSource == "duro") || (gVehicleType == "SZEmission")) {
         ros::Subscriber sub_durostatus = n.subscribe(duro_status_string_topic, 1000, duroStatusStringCallback);
-    }
+    //}
     ros::Rate loop_rate(loop_rate_hz); // 10 Hz
 
     gPoseMsgArrived_b = false;
@@ -192,7 +194,15 @@ int main(int argc, char **argv)
 
         int lAccuracyScaleFactor = 10;
     
-        //ROS_INFO_STREAM("Pose Arrived " << gPoseMsgArrived_b << "  | IMU Arrived: " << gIMUMsgArrived_b << " | Status Arrived: " << gVehicleStatusMsgArrived_b);
+        /*
+        ROS_INFO_STREAM("Pose Arrived " << gPoseMsgArrived_b 
+                                        << "  | IMU Arrived: " << gIMUMsgArrived_b 
+                                        << "  | Status Arrived: " << gVehicleStatusMsgArrived_b
+                                        << "  | Duro Status Arrived: " << gDuroStatusMsgArrived_b
+                                        << "  | Nova Status Arrived: " << gNovatelStatusMsgArrived_b
+                                        << "  | NavSatFix Arrived: " << gNavSatFixMsgArrived_b);
+        */
+                                        
         if (gPoseMsgArrived_b && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
             
             sModelStates lCurrentModelStates_s;
@@ -211,14 +221,22 @@ int main(int argc, char **argv)
             lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
 
             //lCombinedVehicleModel.setPrevMeasuredValues();
-            lCombinedVehicleModel.setMeasuredValuesGNSS(gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gCoGPositionMsg.pose.position.z, lTmpYaw_d);
+            if ((pose_topic == "gps/duro/current_pose") && (gVehicleType == "SZEmission")) {
+                lCombinedVehicleModel.setMeasuredValuesGNSS(gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gCoGPositionMsg.pose.position.z, 0);
+            } else {
+                lCombinedVehicleModel.setMeasuredValuesGNSS(gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gCoGPositionMsg.pose.position.z, lTmpYaw_d);
+            }
             lCombinedVehicleModel.setMeasuredValuesIMU(gIMUMsg.linear_acceleration.x, gIMUMsg.linear_acceleration.y, gIMUMsg.linear_acceleration.z, gIMUMsg.angular_velocity.x, gIMUMsg.angular_velocity.y, gIMUMsg.angular_velocity.z);
             lCombinedVehicleModel.setMeasuredValuesVehicleState(gVehicleStatusMsg.angle, gVehicleStatusMsg.speed);
                 
             if (lFirstIteration) {
                 lCombinedVehicleModel.setPrevEKFMatrices();
                 lCombinedVehicleModel.setPrevMeasuredValues();
-                lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gVehicleStatusMsg.speed, 0);
+                if ((pose_topic == "gps/duro/current_pose") && (gVehicleType == "SZEmission")) {
+                    lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, 0, gIMUMsg.linear_acceleration.y, gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gVehicleStatusMsg.speed, 0);
+                } else {
+                    lCombinedVehicleModel.setModelStates(0, gIMUMsg.angular_velocity.z, lTmpYaw_d, gIMUMsg.linear_acceleration.y, gCoGPositionMsg.pose.position.x, gCoGPositionMsg.pose.position.y, gVehicleStatusMsg.speed, 0);
+                }
                 lFirstIteration = false;
             }
 
@@ -332,6 +350,7 @@ int main(int argc, char **argv)
                                 lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;;
                                 lGNSSState_e = eGNSSState::off;
                                 lAccuracyScaleFactor = 10;
+                                ROS_INFO_STREAM("else " );
                             } else {
                                 if (gDuroStatusMsg.data == "Invalid") {
                                     lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
