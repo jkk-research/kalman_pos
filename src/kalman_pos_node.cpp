@@ -115,7 +115,7 @@ void duroStatusStringCallback(const std_msgs::String::ConstPtr& msg)
 
 int main(int argc, char **argv)
 {
-    std::string pose_topic, imu_topic, estimated_pose, estimated_debug_pose, estimatation_accuracy, nav_sat_fix_topic;
+    std::string pose_topic, imu_topic, estimated_pose, estimated_debug_pose, estimatation_accuracy, nav_sat_fix_topic, duro_status_string_topic, inspvax_topic, vehicle_status_topic;
     bool debug;
     int loop_rate_hz;
     int estimation_method;
@@ -126,7 +126,10 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     ros::NodeHandle n_private("~");
     n_private.param<std::string>("pose_topic", pose_topic, "gps/nova/current_pose");
+    n_private.param<std::string>("vehicle_status_topic", vehicle_status_topic, "vehicle_status");
     n_private.param<std::string>("nav_sat_fix_topic", nav_sat_fix_topic, "gps/nova/fix");
+    n_private.param<std::string>("duro_status_string_topic", duro_status_string_topic, "gps/duro/status_sring");
+    n_private.param<std::string>("inspvax_topic", inspvax_topic, "gps/nova/inspvax" );
     n_private.param<std::string>("imu_topic", imu_topic, "gps/nova/imu");
     n_private.param<std::string>("est_topic", estimated_pose, "estimated_pose");
     n_private.param<std::string>("est_debug_topic", estimated_debug_pose, "estimated_debug_pose");
@@ -157,12 +160,12 @@ int main(int argc, char **argv)
         ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
     }
     ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
-    ros::Subscriber sub_vehicle = n.subscribe("vehicle_status", 1000, vehicleCallback);
+    ros::Subscriber sub_vehicle = n.subscribe(vehicle_status_topic, 1000, vehicleCallback);
     if (gGnssSource == "nova") {
-        ros::Subscriber sub_inspvax = n.subscribe("gps/nova/inspvax", 1000, novatelStatusCallback);
+        ros::Subscriber sub_inspvax = n.subscribe(inspvax_topic, 1000, novatelStatusCallback);
     }
     if ((gGnssSource == "duro") || (gVehicleType == "SZEmission")) {
-        ros::Subscriber sub_durostatus = n.subscribe("gps/duro/status_string", 1000, duroStatusStringCallback);
+        ros::Subscriber sub_durostatus = n.subscribe(duro_status_string_topic, 1000, duroStatusStringCallback);
     }
     ros::Rate loop_rate(loop_rate_hz); // 10 Hz
 
