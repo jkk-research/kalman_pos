@@ -59,5 +59,7 @@ public:
     void setPrevModelStates(void);
     void iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState);
     void getModelStates(sModelStates* pOutModelStates_s);
+    void setYawAngleStates(double pYawAngle_d);
+    double getYawAngle(void);
 };
 #endif

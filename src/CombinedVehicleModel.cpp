@@ -597,5 +597,13 @@ void cCombinedVehicleModel::getModelStates(sModelStates* pOutModelStates_s) {
     pOutModelStates_s->yawRate_d              = iModelStates_s.yawRate_d;
     pOutModelStates_s->lateralVelocity_d      = iModelStates_s.lateralVelocity_d;
     pOutModelStates_s->longitudinalVelocity_d = iModelStates_s.longitudinalVelocity_d;
-
 }
+
+void cCombinedVehicleModel::setYawAngleStates(double pYawAngle_d) {
+    iModelStates_s.yawAngle_d = pYawAngle_d;
+    iPrevModelStates_s.yawAngle_d = pYawAngle_d;
+} 
+
+ double cCombinedVehicleModel::getYawAngle(void) {
+    return iModelStates_s.yawAngle_d;
+ }

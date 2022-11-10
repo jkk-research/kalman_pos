@@ -72,6 +72,7 @@ include_directories(
 #     src/KinematicVehicleModel.cpp
 #     )
 
+add_library(OrientationEstimation src/OrientationEstimation.cpp ./include/VehicleModelTypeDef.h)
 add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp ./include/VehicleModelTypeDef.h)
 add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
 add_library(KinematicVehicleModel src/KinematicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
@@ -100,7 +101,7 @@ target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicV
 add_executable(kalman_pos_node src/kalman_pos_node.cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(kalman_pos_node CombinedVehicleModel ${catkin_LIBRARIES})
+target_link_libraries(kalman_pos_node OrientationEstimation CombinedVehicleModel ${catkin_LIBRARIES})
 
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(kalman_pos_no_aw src/kalman_pos_no_aw.cpp)
