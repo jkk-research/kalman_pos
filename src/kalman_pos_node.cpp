@@ -233,12 +233,12 @@ int main(int argc, char **argv)
 
             //lCombinedVehicleModel_cl.setPrevMeasuredValues();
             if ((pose_topic == "gps/duro/current_pose") && (gVehicleType_s == "SZEmission")) {
-                lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, 0);
+                lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lOrientationEstimation_cl.iFiltMesOri_d);
             } else {
                 lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
             lCombinedVehicleModel_cl.setMeasuredValuesIMU(gIMUMsg_msg.linear_acceleration.x, gIMUMsg_msg.linear_acceleration.y, gIMUMsg_msg.linear_acceleration.z, gIMUMsg_msg.angular_velocity.x, gIMUMsg_msg.angular_velocity.y, gIMUMsg_msg.angular_velocity.z);
-            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed);
+            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed*0.96);
                 
             if (lFirstIteration_b) {
                 lCombinedVehicleModel_cl.setPrevEKFMatrices();
@@ -364,10 +364,11 @@ int main(int argc, char **argv)
                         } else {
                             if (!lPrevOrientationIsValid_b) {
                                 //ROS_INFO_STREAM("Yaw: " << lCombinedVehicleModel_cl.getYawAngle() << "  " << lOrientationEstimation_cl.iFilteredMeanDifference_d);
-                                lCombinedVehicleModel_cl.setYawAngleStates(lCombinedVehicleModel_cl.getYawAngle() + lOrientationEstimation_cl.iFilteredMeanDifference_d);
+                                //lCombinedVehicleModel_cl.setYawAngleStates(lCombinedVehicleModel_cl.getYawAngle() + lOrientationEstimation_cl.iFilteredMeanDifference_d);
+                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
                             }
                             //ROS_INFO_STREAM("  -  " << lOrientationEstimation_cl.iOrientationIsValid_b  << "   " << lPrevOrientationIsValid_b);
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
                         }

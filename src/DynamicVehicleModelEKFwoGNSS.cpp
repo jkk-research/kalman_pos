@@ -148,7 +148,7 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	double lMesLateralAcc_d = pPrevMeasuredValues_s.lateralAcceleration_d;
 	double lMesPositionX_d = pPrevMeasuredValues_s.positionX_d;
 	double lMesPositionY_d = pPrevMeasuredValues_s.positionY_d;
-	double lPevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	double lPrevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 	double lPrevMesLateralAcc_d = pPrevMeasuredValues_s.lateralAcceleration_d;
 
 
@@ -165,7 +165,7 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	matrix<double> lM_m(3, 3);
 	matrix<double> lI_m(5, 5);
 
-	lPevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	lPrevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 
 	lh_v(0) = lYawRate_d;
 	lh_v(1) = lYawAngle_d;
@@ -253,16 +253,16 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lI_m(4, 3) = 0;
 	lI_m(4, 4) = 1;
 
-	if (lPevMesVehicleSpeed_d != 0) {
-		lF_m(0, 0) = (1 - pTs_d * ((pVehicleParameters_s.c1_d + pVehicleParameters_s.c2_d) / (pVehicleParameters_s.m_d * lPevMesVehicleSpeed_d)));
-		lF_m(0, 1) = ((pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * (lPevMesVehicleSpeed_d * lPevMesVehicleSpeed_d)) - 1) * pTs_d;
+	if (lPrevMesVehicleSpeed_d != 0) {
+		lF_m(0, 0) = (1 - pTs_d * ((pVehicleParameters_s.c1_d + pVehicleParameters_s.c2_d) / (pVehicleParameters_s.m_d * lPrevMesVehicleSpeed_d)));
+		lF_m(0, 1) = ((pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * (lPrevMesVehicleSpeed_d * lPrevMesVehicleSpeed_d)) - 1) * pTs_d;
 		lF_m(0, 2) = 0;
 		lF_m(0, 3) = 0;
 		lF_m(0, 4) = 0;
 
 		lF_m(1, 0) = pTs_d * (-pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d + pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d) / pVehicleParameters_s.jz_d;
 		// TODO: Verify l1^2 and l2^2 is correct
-		lF_m(1, 1) = pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lPevMesVehicleSpeed_d * pVehicleParameters_s.jz_d);
+		lF_m(1, 1) = pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lPrevMesVehicleSpeed_d * pVehicleParameters_s.jz_d);
 		lF_m(1, 2) = 0;
 		lF_m(1, 3) = 0;
 		lF_m(1, 4) = 0;
@@ -275,14 +275,14 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 
 		lF_m(3, 0) = 0;
 		lF_m(3, 1) = 0;
-		lF_m(3, 2) = sin(lPrevYawAngle_d) * -pTs_d * lPevMesVehicleSpeed_d +
+		lF_m(3, 2) = sin(lPrevYawAngle_d) * -pTs_d * lPrevMesVehicleSpeed_d +
 			cos(lPrevYawAngle_d) * lPrevMesLateralAcc_d * (-(1 / 2) * (pTs_d * pTs_d));
 		lF_m(3, 3) = 1;
 		lF_m(3, 4) = 0;
 
 		lF_m(4, 0) = 0;
 		lF_m(4, 1) = 0;
-		lF_m(4, 2) = cos(lPrevYawAngle_d) * pTs_d * lPevMesVehicleSpeed_d +
+		lF_m(4, 2) = cos(lPrevYawAngle_d) * pTs_d * lPrevMesVehicleSpeed_d +
 			sin(lPrevYawAngle_d) * lPrevMesLateralAcc_d * (-(1 / 2) * (pTs_d * pTs_d));
 		lF_m(4, 3) = 0;
 		lF_m(4, 4) = 1;
@@ -319,14 +319,14 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 		lF_m(4, 4) = 0;
 	}
 
-	if (lPevMesVehicleSpeed_d != 0) {
+	if (lPrevMesVehicleSpeed_d != 0) {
 		lH_m(0, 0) = 0;
 		lH_m(1, 0) = 0;
 		lH_m(2, 0) = -(pVehicleParameters_s.c1_d + pVehicleParameters_s.c2_d) / pVehicleParameters_s.m_d;
 
 		lH_m(0, 1) = 1;
 		lH_m(1, 1) = 0;
-		lH_m(2, 1) = (pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * lPevMesVehicleSpeed_d);
+		lH_m(2, 1) = (pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * lPrevMesVehicleSpeed_d);
 
 		lH_m(0, 2) = 0;
 		lH_m(1, 2) = 1;

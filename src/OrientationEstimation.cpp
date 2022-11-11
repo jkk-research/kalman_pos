@@ -71,7 +71,7 @@ double cOrientationEstimation::calculateBearing(double pPrevX_d, double pPrevY_d
     }else if ((pPrevX_d < pX_d) && (pPrevY_d == pY_d)){
         lTmpBearing_d = 3.14159265;       
     } else {
-        lTmpBearing_d = atan2(pX_d - pPrevX_d, pPrevY_d - pY_d);
+        lTmpBearing_d = atan2(pX_d - pPrevX_d, pPrevY_d - pY_d) - 1.57079633;
     }
     if(lTmpBearing_d < 0){
         lTmpBearing_d = lTmpBearing_d + 2*3.14159265;

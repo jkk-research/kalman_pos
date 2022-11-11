@@ -334,10 +334,10 @@ void cCombinedVehicleModel::initVehicleParameters(std::string pVehicleType_s) {
         iVehicleParameters_s.l2_d   = 1.5385;
         iVehicleParameters_s.swr_d  = 1;
     } else if (pVehicleType_s == "SZEmission") {
-        iVehicleParameters_s.c1_d   = 40000;
-        iVehicleParameters_s.c2_d   = 24000;
+        iVehicleParameters_s.c1_d   = 4000;
+        iVehicleParameters_s.c2_d   = 2400;
         iVehicleParameters_s.m_d    = 180;
-        iVehicleParameters_s.jz_d   = 27;
+        iVehicleParameters_s.jz_d   = 270;
         iVehicleParameters_s.l1_d   = 1.3 - 0.976;
         iVehicleParameters_s.l2_d   = 0.976;
         iVehicleParameters_s.swr_d  = 1;
@@ -432,7 +432,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
     double lLateralSpeed_d        = 0;
     double lLongitudinalSpeed_d   = 0;
     
-    if (iPrevMeasuredValues_s.vehicleSpeed_d < 15) {
+    if (iPrevMeasuredValues_s.vehicleSpeed_d < 1) {
         if ((pEstimationMode_e == eEstimationMode::model)) {
             // Kinematic model
             setPrevModelStates();
@@ -515,10 +515,10 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             setPrevMeasuredValues();
         }
 
-    }
-    else {
+    } else {
         if ((pEstimationMode_e == eEstimationMode::model)) {
             // Dynamic model
+            //ROS_INFO_STREAM("Dynamic model");
             setPrevModelStates();
             setPrevEKFMatrices();
 
@@ -545,9 +545,21 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
 
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
+
+                /*
+                ROS_INFO_STREAM("-set prev state: beta" << iModelStates_s.beta_d  
+                    << " ay: " << iModelStates_s.lateralAcceleration_d 
+                    << " x: " << iModelStates_s.positionX_d 
+                    << " y: " << iModelStates_s.positionY_d
+                    << " yaw_a: " << iModelStates_s.yawAngle_d
+                    << " yaw_r: " << iModelStates_s.yawRate_d
+                    << " v_x: " << iModelStates_s.lateralVelocity_d
+                    << " v_y: " << iModelStates_s.longitudinalVelocity_d);
+                */
         }
         else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState >= eGNSSState::rtk_float)) {
             // Dynamic model with EKF + GNSS
+            //ROS_INFO_STREAM("Dynamic model EKF + GNSS");
             setPrevModelStates();
             setPrevEKFMatrices();
 
@@ -564,9 +576,9 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                 iRDynEKF_m);
 
             setPrevMeasuredValues();
-        }
-        else {
+        }else {
             // Dynamic model with EKF without GNSS
+            //ROS_INFO_STREAM("Dynamic model EKF wo GNSS");
             setPrevModelStates();
             setPrevEKFMatrices();
 
