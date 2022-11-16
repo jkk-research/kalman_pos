@@ -422,7 +422,7 @@ void cCombinedVehicleModel::setPrevModelStates(void) {
 
 }
 
-void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState) {
+void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState_e, double pKinSpeedLimit_d) {
     double lBeta_d                = 0;
     double lLateralAcceleration_d = 0;
     double lPositionX_d           = 0;
@@ -432,7 +432,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
     double lLateralSpeed_d        = 0;
     double lLongitudinalSpeed_d   = 0;
     
-    if (iPrevMeasuredValues_s.vehicleSpeed_d < 1) {
+    if (iPrevMeasuredValues_s.vehicleSpeed_d < pKinSpeedLimit_d) {
         if ((pEstimationMode_e == eEstimationMode::model)) {
             // Kinematic model
             setPrevModelStates();
@@ -463,7 +463,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             setModelStates(lBeta_d, lYawRate_d, lYawAngle_d, lLateralAcceleration_d, lPositionX_d, lPositionY_d, lLongitudinalSpeed_d, lLateralSpeed_d);
             setPrevMeasuredValues();
         }
-        else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState >= eGNSSState::rtk_float)) {
+        else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState_e >= eGNSSState::rtk_float)) {
             // Kinematic model with EKF + GNSS
             setPrevModelStates();
             setPrevEKFMatrices();
@@ -557,7 +557,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
                     << " v_y: " << iModelStates_s.longitudinalVelocity_d);
                 */
         }
-        else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState >= eGNSSState::rtk_float)) {
+        else if ((pEstimationMode_e >= eEstimationMode::ekf) && (pGNSSState_e >= eGNSSState::rtk_float)) {
             // Dynamic model with EKF + GNSS
             //ROS_INFO_STREAM("Dynamic model EKF + GNSS");
             setPrevModelStates();
@@ -582,17 +582,33 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             setPrevModelStates();
             setPrevEKFMatrices();
 
-            dynEKFwoGNSSEstimate(
-                iModelStates_s,
-                iPDynEKFwoGNSS_m,
-                iVehicleParameters_s,
-                iMeasuredValues_s,
-                iPrevMeasuredValues_s,
-                iPrevModelStates_s,
-                pTs_d,
-                iPrevPDynEKFwoGNSS_m,
-                iQDynEKFwoGNSS_m,
-                iRDynEKFwoGNSS_m);
+            if (pGNSSState_e > eGNSSState::off) {
+                dynEKFwoGNSSEstimate(
+                    iModelStates_s,
+                    iPDynEKFwoGNSS_m,
+                    iVehicleParameters_s,
+                    iMeasuredValues_s,
+                    iPrevMeasuredValues_s,
+                    iPrevModelStates_s,
+                    pTs_d,
+                    iPrevPDynEKFwoGNSS_m,
+                    iQDynEKFwoGNSS_m,
+                    iRDynEKFwoGNSS_m,
+                    true);
+            } else {
+                dynEKFwoGNSSEstimate(
+                    iModelStates_s,
+                    iPDynEKFwoGNSS_m,
+                    iVehicleParameters_s,
+                    iMeasuredValues_s,
+                    iPrevMeasuredValues_s,
+                    iPrevModelStates_s,
+                    pTs_d,
+                    iPrevPDynEKFwoGNSS_m,
+                    iQDynEKFwoGNSS_m,
+                    iRDynEKFwoGNSS_m,
+                    false);
+            }
 
             //ROS_INFO_STREAM("Model EKF wo GNSS Beta: " << lBeta_d << "  YR: " << lYawRate_d << "  YA: " << lYawAngle_d << "  LA: " << lLateralAcceleration_d << "  X: " << lPositionX_d << "  Y: " << lPositionY_d << "  VX: " << lLongitudinalSpeed_d << "  VY: " << lLateralSpeed_d);
             setPrevMeasuredValues();

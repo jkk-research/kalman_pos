@@ -57,7 +57,7 @@ public:
     void setPrevMeasuredValues(void);
     void setModelStates(double pBeta_d, double pYawRate_d, double pYawAngle_d, double pLateralAcceleration_d, double pPositionX_d, double pPositionY_d, double pLongitudinalVelocity_d, double pLateralVelocity_d);
     void setPrevModelStates(void);
-    void iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState);
+    void iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState_e, double pKinSpeedLimit_d);
     void getModelStates(sModelStates* pOutModelStates_s);
     void setYawAngleStates(double pYawAngle_d);
     double getYawAngle(void);

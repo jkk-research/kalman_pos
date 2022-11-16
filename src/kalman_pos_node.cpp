@@ -190,6 +190,8 @@ int main(int argc, char **argv)
 
     bool lPrevOrientationIsValid_b = false;
 
+    double lKinSpeedLimit_d = 1;
+
     ROS_INFO_STREAM("ROS::OK  " << ros::ok());
 
     while (ros::ok())
@@ -255,6 +257,8 @@ int main(int argc, char **argv)
                 lPrevEstPosX_d = gCogPositionMsg_msg.pose.position.x;
                 lPrevEstPosY_d = gCogPositionMsg_msg.pose.position.y;
             }
+
+            lKinSpeedLimit_d = 1;
 
             if (gGnssSource_s == "nova") {
                 if ((!gNovatelStatusMsgMsgArrived_b) || (estimation_method == 0)) {
@@ -350,40 +354,139 @@ int main(int argc, char **argv)
                 }
             } else {
                 switch (estimation_method) {
-                    case 0: 
+                    case 0: // Kinematic model without EKF and without GNSS
                         lEstimationMode_e = eEstimationMode::model;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
+                        lKinSpeedLimit_d = 200;
                         break;
-                    case 1: 
+                    case 1: // Kinematic + dynamic model without EKF and without GNSS
+                        lEstimationMode_e = eEstimationMode::model;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        lKinSpeedLimit_d = 1;
+                        break;
+                    case 2: // Kinematic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
                         if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
                             lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
-                            //ROS_INFO_STREAM("  " << lOrientationEstimation_cl.iOrientationIsValid_b  << "   " << lPrevOrientationIsValid_b);
+                            lKinSpeedLimit_d = 200;
                         } else {
                             if (!lPrevOrientationIsValid_b) {
-                                //ROS_INFO_STREAM("Yaw: " << lCombinedVehicleModel_cl.getYawAngle() << "  " << lOrientationEstimation_cl.iFilteredMeanDifference_d);
-                                //lCombinedVehicleModel_cl.setYawAngleStates(lCombinedVehicleModel_cl.getYawAngle() + lOrientationEstimation_cl.iFilteredMeanDifference_d);
                                 lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
                             }
-                            //ROS_INFO_STREAM("  -  " << lOrientationEstimation_cl.iOrientationIsValid_b  << "   " << lPrevOrientationIsValid_b);
                             lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 200;
                         }
                         lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
                         break;
+                    case 3: // Kinematic + dynamic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS) 
+                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
+                            lEstimationMode_e = eEstimationMode::model;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
+                        } else {
+                            if (!lPrevOrientationIsValid_b) {
+                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
+                            }
+                            lEstimationMode_e = eEstimationMode::model;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
+                        }
+                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
+                        break;
+                    case 5: // Kinematic model with EKF and without GNSS
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        lKinSpeedLimit_d = 200;
+                        break;
+                    case 6: // Kinematic + dynaicmodel with EKF and without GNSS
+                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lGNSSState_e = eGNSSState::off;
+                        lAccuracyScaleFactor = 10;
+                        lKinSpeedLimit_d = 1;
+                        break;
+                    case 7: // Kinematic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
+                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 200;
+                        } else {
+                            if (!lPrevOrientationIsValid_b) {
+                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
+                            }
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 200;
+                        }
+                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
+                        break;
+                    case 8: // Kinematic + dynamic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
+                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
+                        } else {
+                            if (!lPrevOrientationIsValid_b) {
+                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
+                            }
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::off;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
+                        }
+                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
+                        break;
+                    case 9: // Kinematic + dynamic model with EKF and without GNSS position but with yaw rate calculation (based on GNSS)
+                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::SBAS;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
+                        } else {
+                            if (!lPrevOrientationIsValid_b) {
+                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
+                            }
+                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lGNSSState_e = eGNSSState::SBAS;
+                            lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
+                        }
+                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
+                        break;
+
                     case 10: 
                         if (gVehicleType_s == "SZEmission") {
                             if ((!gDuroStatusMsgArrived_b)){
-                                lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;;
-                                lGNSSState_e = eGNSSState::off;
-                                lAccuracyScaleFactor = 10;
-                                ROS_INFO_STREAM("else " );
+                                if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
+                                        lEstimationMode_e = eEstimationMode::model;
+                                        lGNSSState_e = eGNSSState::off;
+                                        lAccuracyScaleFactor = 10;
+                                        lKinSpeedLimit_d = 1;
+                                    } else {
+                                        if (!lPrevOrientationIsValid_b) {
+                                            lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
+                                        }
+                                        lEstimationMode_e = eEstimationMode::model;
+                                        lGNSSState_e = eGNSSState::off;
+                                        lAccuracyScaleFactor = 10;
+                                        lKinSpeedLimit_d = 1;
+                                    }
+                                    lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
+                                    break;
                             } else {
+                                lKinSpeedLimit_d = 1;
                                 if (gDuroStatusMsg_msg.data == "Invalid") {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lEstimationMode_e = eEstimationMode::model;
                                     lGNSSState_e = eGNSSState::off;
                                     lAccuracyScaleFactor = 10;
                                 } else if (gDuroStatusMsg_msg.data == "Single Point Position (SPP)") {
@@ -411,27 +514,29 @@ int main(int argc, char **argv)
                                     lGNSSState_e = eGNSSState::pseudorange;
                                     lAccuracyScaleFactor = 5;
                                 } else {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                                    lEstimationMode_e = eEstimationMode::model;
                                     lGNSSState_e = eGNSSState::off;
                                     lAccuracyScaleFactor = 10;
                                 }
                             }
                         } else {
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                            lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
+                            lKinSpeedLimit_d = 1;
                         }
                         break;
                     default:
                         //lEstimationMode_e = eEstimationMode::model;
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                        lEstimationMode_e = eEstimationMode::model;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
+                        lKinSpeedLimit_d = 1;
                         break;
                 }
             }
 
-            lCombinedVehicleModel_cl.iterateModel(1.0/loop_rate_hz, lEstimationMode_e, lGNSSState_e);
+            lCombinedVehicleModel_cl.iterateModel(1.0/loop_rate_hz, lEstimationMode_e, lGNSSState_e, lKinSpeedLimit_d);
             lCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_s);
 
             est_pose_msg.header.stamp = ros::Time::now();

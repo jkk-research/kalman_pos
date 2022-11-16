@@ -133,7 +133,7 @@ double dynEKFwoGNSSPositionYCalculation(sVehicleParameters pVehicleParameters_s,
 	return lReturnValue_d;
 }
 
-void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, matrix<double>& pPrevP_m, matrix<double>& pQ_m, matrix<double>& pR_m) {
+void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, matrix<double>& pPrevP_m, matrix<double>& pQ_m, matrix<double>& pR_m, bool pUseYawAngle_b) {
 	double lYawRate_d = dynEKFwoGNSSYawRateCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lYawAngle_d = dynEKFwoGNSSYawAngleCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lPrevYawAngle_d = pPrevModelStates_s.yawAngle_d;
@@ -178,7 +178,11 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lxPre_v(4) = lPositionY_d;
 
 	ly_v(0) = lMesYawRate_d;
-	ly_v(1) = lMesYawAngle_d;
+	if (pUseYawAngle_b) {
+		ly_v(1) = lMesYawAngle_d;
+	} else {
+		ly_v(1) = lPrevYawAngle_d;
+	}
 	ly_v(2) = lMesLateralAcc_d;
 
 	lL_m(0, 0) = 1;
