@@ -115,12 +115,15 @@ void duroStatusStringCallback(const std_msgs::String::ConstPtr& msg)
 int main(int argc, char **argv)
 {
     std::string pose_topic, imu_topic, estimated_pose, estimated_debug_pose, estimatation_accuracy, nav_sat_fix_topic, duro_status_string_topic, inspvax_topic, vehicle_status_topic;
-    bool debug;
+    bool debug, dynamic_time_calc;
     int loop_rate_hz;
     int estimation_method;
     cCombinedVehicleModel lCombinedVehicleModel_cl("leaf");
     cOrientationEstimation lOrientationEstimation_cl;
     bool lFirstIteration_b = true;
+    double lTs_d = 0;
+    unsigned long long lPrevMillisecondsSinceEpoch_u64 = 0;
+    unsigned long long lMillisecondsSinceEpoch_u64 = 0;
 
     ros::init(argc, argv, "kalman_pos_node");
     ros::NodeHandle n;
@@ -139,6 +142,7 @@ int main(int argc, char **argv)
     n_private.param<int>("loop_rate_hz", loop_rate_hz, 10);
     n_private.param<int>("estimation_method", estimation_method, 0);
     n_private.param<std::string>("gnss_source", gGnssSource_s, "nova");
+    n_private.param<bool>("dynamic_time_calc", dynamic_time_calc, false);
     ROS_INFO_STREAM("kalman_pos_node started | pose: " << pose_topic
                     << " | vehicle_status: " << vehicle_status_topic 
                     << " | debug: " << debug 
@@ -151,7 +155,8 @@ int main(int argc, char **argv)
                     << " | vehicle_type: " << gVehicleType_s
                     << " | loop_rate_hz: " << loop_rate_hz
                     << " | estimation_method: " << estimation_method
-                    << " | gnss_source: " << gGnssSource_s );
+                    << " | gnss_source: " << gGnssSource_s 
+                    << " | dynamic_time_calc: " << gGnssSource_s );
     
     ros::Publisher est_orientationDif = n.advertise<std_msgs::Float64>("estimated_ori_dif", 1000);
     ros::Publisher est_orientation = n.advertise<std_msgs::Float64>("estimated_ori", 1000);
@@ -172,6 +177,8 @@ int main(int argc, char **argv)
         ros::Subscriber sub_durostatus = n.subscribe(duro_status_string_topic, 1000, duroStatusStringCallback);
     //}
     ros::Rate loop_rate(loop_rate_hz); // 10 Hz
+    
+    lTs_d = 1 / loop_rate_hz;
 
     gPoseMsgArrived_b = false;
     gNavSatFixMsgArrived_b = false;
@@ -535,6 +542,26 @@ int main(int argc, char **argv)
                         break;
                 }
             }
+
+            struct timeval lTimeval_tv;
+            gettimeofday(&lTimeval_tv, NULL);
+
+            lMillisecondsSinceEpoch_u64 = 
+                (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
+                (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
+
+            if (dynamic_time_calc) {
+                if (lPrevMillisecondsSinceEpoch_u64 == 0) {
+                    lTs_d = 1.0/loop_rate_hz;
+                } else {
+                    lTs_d = (double(lMillisecondsSinceEpoch_u64 - lPrevMillisecondsSinceEpoch_u64)) / 1000.0;
+                }
+            } else {
+                lTs_d = 1.0/loop_rate_hz;
+            }
+            lPrevMillisecondsSinceEpoch_u64 = lMillisecondsSinceEpoch_u64;
+
+            //ROS_INFO_STREAM(lTs_d);
 
             lCombinedVehicleModel_cl.iterateModel(1.0/loop_rate_hz, lEstimationMode_e, lGNSSState_e, lKinSpeedLimit_d);
             lCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_s);
