@@ -115,7 +115,7 @@ void duroStatusStringCallback(const std_msgs::String::ConstPtr& msg)
 int main(int argc, char **argv)
 {
     std::string pose_topic, imu_topic, estimated_pose, estimated_debug_pose, estimatation_accuracy, nav_sat_fix_topic, duro_status_string_topic, inspvax_topic, vehicle_status_topic;
-    bool debug, dynamic_time_calc;
+    bool debug, dynamic_time_calc, do_not_wait_for_gnss_msgs;
     int loop_rate_hz;
     int estimation_method;
     cCombinedVehicleModel lCombinedVehicleModel_cl("leaf");
@@ -143,6 +143,7 @@ int main(int argc, char **argv)
     n_private.param<int>("estimation_method", estimation_method, 0);
     n_private.param<std::string>("gnss_source", gGnssSource_s, "nova");
     n_private.param<bool>("dynamic_time_calc", dynamic_time_calc, false);
+    n_private.param<bool>("do_not_wait_for_gnss_msgs", do_not_wait_for_gnss_msgs, false);
     ROS_INFO_STREAM("kalman_pos_node started | pose: " << pose_topic
                     << " | vehicle_status: " << vehicle_status_topic 
                     << " | debug: " << debug 
@@ -223,7 +224,7 @@ int main(int argc, char **argv)
                                         << "  | NavSatFix Arrived: " << gNavSatFixMsgArrived_b);
         */
                                         
-        if (gPoseMsgArrived_b && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
+        if ((gPoseMsgArrived_b || do_not_wait_for_gnss_msgs) && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
             
             sModelStates lCurrentModelStates_s;
 
@@ -247,7 +248,8 @@ int main(int argc, char **argv)
                 lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
             lCombinedVehicleModel_cl.setMeasuredValuesIMU(gIMUMsg_msg.linear_acceleration.x, gIMUMsg_msg.linear_acceleration.y, gIMUMsg_msg.linear_acceleration.z, gIMUMsg_msg.angular_velocity.x, gIMUMsg_msg.angular_velocity.y, gIMUMsg_msg.angular_velocity.z);
-            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed*0.96);
+            //lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed*0.96);
+            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1.1, gVehicleStatusMsg_msg.speed);
                 
             if (lFirstIteration_b) {
                 lCombinedVehicleModel_cl.setPrevEKFMatrices();
@@ -563,7 +565,7 @@ int main(int argc, char **argv)
 
             //ROS_INFO_STREAM(lTs_d);
 
-            lCombinedVehicleModel_cl.iterateModel(1.0/loop_rate_hz, lEstimationMode_e, lGNSSState_e, lKinSpeedLimit_d);
+            lCombinedVehicleModel_cl.iterateModel(lTs_d, lEstimationMode_e, lGNSSState_e, lKinSpeedLimit_d);
             lCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_s);
 
             est_pose_msg.header.stamp = ros::Time::now();
