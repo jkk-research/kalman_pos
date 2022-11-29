@@ -11,7 +11,7 @@
         <param name="est_debug_topic" type="string" value="estimated_debug_pose" />
         <param name="debug" value="true" />
 		<param name="loop_rate_hz" type="int" value="20" />
-		<param name="estimation_method" type="int" value="0" />
+		<param name="estimation_method" type="int" value="3" />
         <param name="gnss_source" type="string" value="none" />
         <param name="vehicle_type" type="string" value="SZEmission" />
         <param name="dynamic_time_calc" value="true" />

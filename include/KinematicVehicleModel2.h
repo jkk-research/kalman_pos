@@ -1,6 +1,6 @@
 #pragma once
-#ifndef KINEMATIC_VEHICLE_MODEL
-#define KINEMATIC_VEHICLE_MODEL
+#ifndef KINEMATIC_VEHICLE_MODEL2
+#define KINEMATIC_VEHICLE_MODEL2
 
 #include "VehicleModelTypeDef.h"
 

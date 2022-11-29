@@ -38,7 +38,7 @@ double dynBetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValu
 				pPrevModelStates_s.beta_d)
 
 			+
-			((((pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * (lPrevVehicleSpeed_d * lPrevVehicleSpeed_d)) - 1) * pTs_d) *
+			(((((pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * (lPrevVehicleSpeed_d * lPrevVehicleSpeed_d))) - 1) * pTs_d) *
 				pPrevModelStates_s.yawRate_d);
 	}
 	else {
@@ -51,12 +51,12 @@ double dynBetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValu
 double dynYawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevVehicleSpeed_d = 0;
-	/*
+	
 	if (cos(pPrevModelStates_s.beta_d) != 0) {
 		lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d / cos(pPrevModelStates_s.beta_d); // vx / cos(beta)
 	}
-	*/
-	lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	
+	//lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 
 	if (lPrevVehicleSpeed_d != 0) {
 		lReturnValue_d =
@@ -78,13 +78,13 @@ double dynLateralAccCalculation(sVehicleParameters pVehicleParameters_s, sMeasur
 	double lVehicleSpeed_d = 0;
 	double lReturnValue_d = 0;
 
-	/*
+	
 	if (cos(pBeta_d) != 0) {
 		lVehicleSpeed_d = pMeasuredValues_s.vehicleSpeed_d / cos(pBeta_d); // vx / cos(beta)
 	}
-	*/
+	
 
-	lVehicleSpeed_d = pMeasuredValues_s.vehicleSpeed_d;
+	//lVehicleSpeed_d = pMeasuredValues_s.vehicleSpeed_d;
 
 	if (lVehicleSpeed_d != 0) {
 		lReturnValue_d =
