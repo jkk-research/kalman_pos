@@ -248,8 +248,8 @@ int main(int argc, char **argv)
                 lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
             lCombinedVehicleModel_cl.setMeasuredValuesIMU(gIMUMsg_msg.linear_acceleration.x, gIMUMsg_msg.linear_acceleration.y, gIMUMsg_msg.linear_acceleration.z, gIMUMsg_msg.angular_velocity.x, gIMUMsg_msg.angular_velocity.y, gIMUMsg_msg.angular_velocity.z);
-            //lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed*0.96);
-            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1.1, gVehicleStatusMsg_msg.speed);
+            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed*0.96);
+            //lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1.1, gVehicleStatusMsg_msg.speed);
                 
             if (lFirstIteration_b) {
                 lCombinedVehicleModel_cl.setPrevEKFMatrices();
