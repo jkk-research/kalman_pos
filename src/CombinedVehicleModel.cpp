@@ -440,7 +440,8 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
 
             
             lBeta_d                 = kinBetaCalculation(iVehicleParameters_s, iMeasuredValues_s, iModelStates_s, pTs_d);
-            lYawRate_d              = iMeasuredValues_s.yawRate_d;//kinYawRateCalculation(iVehicleParameters_s, iMeasuredValues_s, iModelStates_s, pTs_d);
+            //lYawRate_d              = iMeasuredValues_s.yawRate_d;//kinYawRateCalculation(iVehicleParameters_s, iMeasuredValues_s, iModelStates_s, pTs_d);
+            lYawRate_d              = kinYawRateCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lYawAngle_d             = kinYawAngleCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lLateralAcceleration_d  = kinLateralAccCalculation(iVehicleParameters_s, iMeasuredValues_s, lBeta_d, lYawRate_d);
             lPositionX_d            = kinPositionXCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
