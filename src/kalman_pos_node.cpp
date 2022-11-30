@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 
     bool lPrevOrientationIsValid_b = false;
 
-    double lKinSpeedLimit_d = 1.5;
+    double lKinSpeedLimit_d = 1;
 
     ROS_INFO_STREAM("ROS::OK  " << ros::ok());
 
@@ -248,7 +248,7 @@ int main(int argc, char **argv)
                 lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
             lCombinedVehicleModel_cl.setMeasuredValuesIMU(gIMUMsg_msg.linear_acceleration.x, gIMUMsg_msg.linear_acceleration.y, gIMUMsg_msg.linear_acceleration.z, gIMUMsg_msg.angular_velocity.x, gIMUMsg_msg.angular_velocity.y, gIMUMsg_msg.angular_velocity.z);
-            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle, gVehicleStatusMsg_msg.speed*0.98);
+            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1, gVehicleStatusMsg_msg.speed*1);
             //lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1.1, gVehicleStatusMsg_msg.speed);
                 
             if (lFirstIteration_b) {
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
                 lPrevEstPosY_d = gCogPositionMsg_msg.pose.position.y;
             }
 
-            lKinSpeedLimit_d = 1.5;
+            lKinSpeedLimit_d = 1;
 
             if (gGnssSource_s == "nova") {
                 if ((!gNovatelStatusMsgMsgArrived_b) || (estimation_method == 0)) {
@@ -373,7 +373,7 @@ int main(int argc, char **argv)
                         lEstimationMode_e = eEstimationMode::model;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
-                        lKinSpeedLimit_d = 1.5;
+                        lKinSpeedLimit_d = 1;
                         break;
                     case 2: // Kinematic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
                         if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
@@ -397,7 +397,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         } else {
                             if (!lPrevOrientationIsValid_b) {
                                 lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
@@ -405,7 +405,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         }
                         lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
                         break;
@@ -419,7 +419,7 @@ int main(int argc, char **argv)
                         lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
-                        lKinSpeedLimit_d = 1.5;
+                        lKinSpeedLimit_d = 1;
                         break;
                     case 7: // Kinematic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
                         if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
@@ -443,7 +443,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         } else {
                             if (!lPrevOrientationIsValid_b) {
                                 lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
@@ -451,7 +451,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         }
                         lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
                         break;
@@ -460,7 +460,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                             lGNSSState_e = eGNSSState::SBAS;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         } else {
                             if (!lPrevOrientationIsValid_b) {
                                 lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                             lGNSSState_e = eGNSSState::SBAS;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         }
                         lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
                         break;
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
                                         lEstimationMode_e = eEstimationMode::model;
                                         lGNSSState_e = eGNSSState::off;
                                         lAccuracyScaleFactor = 10;
-                                        lKinSpeedLimit_d = 1.5;
+                                        lKinSpeedLimit_d = 1;
                                     } else {
                                         if (!lPrevOrientationIsValid_b) {
                                             lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
@@ -488,12 +488,12 @@ int main(int argc, char **argv)
                                         lEstimationMode_e = eEstimationMode::model;
                                         lGNSSState_e = eGNSSState::off;
                                         lAccuracyScaleFactor = 10;
-                                        lKinSpeedLimit_d = 1.5;
+                                        lKinSpeedLimit_d = 1;
                                     }
                                     lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
                                     break;
                             } else {
-                                lKinSpeedLimit_d = 1.5;
+                                lKinSpeedLimit_d = 1;
                                 if (gDuroStatusMsg_msg.data == "Invalid") {
                                     lEstimationMode_e = eEstimationMode::model;
                                     lGNSSState_e = eGNSSState::off;
@@ -532,7 +532,7 @@ int main(int argc, char **argv)
                             lEstimationMode_e = eEstimationMode::model;
                             lGNSSState_e = eGNSSState::off;
                             lAccuracyScaleFactor = 10;
-                            lKinSpeedLimit_d = 1.5;
+                            lKinSpeedLimit_d = 1;
                         }
                         break;
                     default:
@@ -540,7 +540,7 @@ int main(int argc, char **argv)
                         lEstimationMode_e = eEstimationMode::model;
                         lGNSSState_e = eGNSSState::off;
                         lAccuracyScaleFactor = 10;
-                        lKinSpeedLimit_d = 1.5;
+                        lKinSpeedLimit_d = 1;
                         break;
                 }
             }
