@@ -22,12 +22,12 @@ double dynLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sM
 double dynBetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevVehicleSpeed_d = 0;
-	/*
+	
 	if (cos(pPrevModelStates_s.beta_d) != 0) {
 		lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d / cos(pPrevModelStates_s.beta_d); // vx / cos(beta)
 	}
-	*/
-	lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	
+	//lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 
 	if ((lPrevVehicleSpeed_d != 0) && (((pVehicleParameters_s.m_d * (lPrevVehicleSpeed_d * lPrevVehicleSpeed_d)) - 1) != 0)) {
 		lReturnValue_d =
