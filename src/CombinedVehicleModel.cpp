@@ -242,7 +242,7 @@ void cCombinedVehicleModel::initEKFMatrices(void) {
     iRDynEKFwoGNSS_m(0, 1) = 0;
     iRDynEKFwoGNSS_m(0, 2) = 0;
     iRDynEKFwoGNSS_m(1, 0) = 0;
-    iRDynEKFwoGNSS_m(1, 1) = 10.750794749765446;
+    iRDynEKFwoGNSS_m(1, 1) = 1.750794749765446; //1.750794749765446;
     iRDynEKFwoGNSS_m(1, 2) = 0;
     iRDynEKFwoGNSS_m(2, 0) = 0;
     iRDynEKFwoGNSS_m(2, 1) = 0;
@@ -335,7 +335,7 @@ void cCombinedVehicleModel::initVehicleParameters(std::string pVehicleType_s) {
         iVehicleParameters_s.swr_d  = 1;
     } else if (pVehicleType_s == "SZEmission") {
         iVehicleParameters_s.c1_d   = 3000;//4000;
-        iVehicleParameters_s.c2_d   = 1000;//2400; // The ratio is very important!!!!!
+        iVehicleParameters_s.c2_d   = 800;//2400; // The ratio is very important!!!!!
         iVehicleParameters_s.m_d    = 180;
         iVehicleParameters_s.jz_d   = 270;
         iVehicleParameters_s.l1_d   = 1.3 - 0.976;
@@ -523,7 +523,6 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             setPrevModelStates();
             setPrevEKFMatrices();
 
-            /*
             lBeta_d                 = dynBetaCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lYawRate_d              = dynYawRateCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lYawAngle_d             = dynYawAngleCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
@@ -532,23 +531,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
             lPositionY_d            = dynPositionYCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
             lLongitudinalSpeed_d    = dynLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
             lLateralSpeed_d         = dynLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
-            */
-
-            //lBeta_d                 = kinBetaCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            lBeta_d                 = dynBetaCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            //lYawRate_d              = iMeasuredValues_s.yawRate_d;//dynYawRateCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            lYawRate_d              = dynYawRateCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            //lYawRate_d              = dynYawRateCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            //kinYawRateCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            lYawAngle_d             = dynYawAngleCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            lLateralAcceleration_d  = dynLateralAccCalculation(iVehicleParameters_s, iMeasuredValues_s, lBeta_d, lYawRate_d);
-            lPositionX_d            = dynPositionXCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            lPositionY_d            = dynPositionYCalculation(iVehicleParameters_s, iPrevMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            lLongitudinalSpeed_d    = dynLongitudinalVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
-            lLateralSpeed_d         = dynLateralVelocityCalculation(iVehicleParameters_s, iMeasuredValues_s, pTs_d);
-            //lLongitudinalSpeed_d    = kinLongitudinalVelocityCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            //lLateralSpeed_d         = kinLateralVelocityCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);
-            
+         
 
             /*
             lBeta_d                 = kinBetaCalculation2(iVehicleParameters_s, iMeasuredValues_s, iPrevModelStates_s, pTs_d);

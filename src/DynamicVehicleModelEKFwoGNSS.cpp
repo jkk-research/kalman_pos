@@ -181,7 +181,10 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	if (pUseYawAngle_b) {
 		ly_v(1) = lMesYawAngle_d;
 	} else {
-		ly_v(1) = pPrevModelStates_s.yawAngle_d + lMesYawRate_d * pTs_d;
+		//ly_v(1) = pPrevModelStates_s.yawAngle_d + lMesYawRate_d * pTs_d;
+		double lTmpBeta_d = atan(tan(pMeasuredValues_s.steeringAngle_d) * (pVehicleParameters_s.l2_d / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)));
+		ly_v(1) = pPrevModelStates_s.yawAngle_d + pTs_d*(pMeasuredValues_s.vehicleSpeed_d *((tan(pMeasuredValues_s.steeringAngle_d) * cos(lTmpBeta_d)) / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)));
+
 	}
 	ly_v(2) = lMesLateralAcc_d;
 
