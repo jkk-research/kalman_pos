@@ -6,16 +6,17 @@
         <param name="duro_status_string_topic" type="string" value="gps/duro/status_string" />
         <param name="inspvax_topic" type="string" value="gps/nova/inspvax" />
         <param name="imu_topic" type="string" value="/imu/data" />
-        <param name="est_topic" type="string" value="estimated_pose" />
+        <param name="est_cog_topic" type="string" value="estimated_pose_cog" />
+        <param name="est_trav_distance_odom_topic" type="string" value="estimated_trav_dist_odom" />
+        <param name="est_trav_distance_est_pos_topic" type="string" value="estimated_trav_dist_est_pos" />
+        <param name="est_baselink_topic" type="string" value="estimated_pose_baselink" />
         <param name="est_accuracy_topic" type="string" value="estimation_accuracy" />
-        <param name="est_debug_topic" type="string" value="estimated_debug_pose" />
-        <param name="debug" value="true" />
 		<param name="loop_rate_hz" type="int" value="30" />
-		<param name="estimation_method" type="int" value="6" />
+		<param name="estimation_method" type="int" value="8" />
         <param name="gnss_source" type="string" value="none" />
         <param name="vehicle_type" type="string" value="SZEmission" />
         <param name="dynamic_time_calc" value="true" />
-        <param name="kinematic_model_max_speed" value="0.5" />
+        <param name="kinematic_model_max_speed" value="0.3" />
         <param name="do_not_wait_for_gnss_msgs" value="true" />
     </node>
 </launch>

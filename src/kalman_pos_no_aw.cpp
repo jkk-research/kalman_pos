@@ -18,8 +18,6 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
   ROS_INFO_STREAM("acc x: " << msg->linear_acceleration.x << " y: " << msg->linear_acceleration.y);
 }
 
-
-
 int main(int argc, char **argv)
 {
     std::string pose_topic, imu_topic, estimated_pose, estimated_debug_pose;

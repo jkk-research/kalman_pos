@@ -2,6 +2,11 @@
 #include "ros/ros.h"
 #include <sstream>
 
+cCombinedVehicleModel::cCombinedVehicleModel() {
+    initEKFMatrices();
+    initVehicleParameters("SZEmission");
+}
+
 cCombinedVehicleModel::cCombinedVehicleModel(std::string pVehicleType_s) {
     initEKFMatrices();
     initVehicleParameters(pVehicleType_s);
@@ -626,6 +631,17 @@ void cCombinedVehicleModel::getModelStates(sModelStates* pOutModelStates_s) {
     pOutModelStates_s->yawRate_d              = iModelStates_s.yawRate_d;
     pOutModelStates_s->lateralVelocity_d      = iModelStates_s.lateralVelocity_d;
     pOutModelStates_s->longitudinalVelocity_d = iModelStates_s.longitudinalVelocity_d;
+}
+
+void cCombinedVehicleModel::getPrevModelStates(sModelStates* pOutPrevModelStates_s) {
+    pOutPrevModelStates_s->beta_d                 = iPrevModelStates_s.beta_d;
+    pOutPrevModelStates_s->lateralAcceleration_d  = iPrevModelStates_s.lateralAcceleration_d;
+    pOutPrevModelStates_s->positionX_d            = iPrevModelStates_s.positionX_d;
+    pOutPrevModelStates_s->positionY_d            = iPrevModelStates_s.positionY_d;
+    pOutPrevModelStates_s->yawAngle_d             = iPrevModelStates_s.yawAngle_d;
+    pOutPrevModelStates_s->yawRate_d              = iPrevModelStates_s.yawRate_d;
+    pOutPrevModelStates_s->lateralVelocity_d      = iPrevModelStates_s.lateralVelocity_d;
+    pOutPrevModelStates_s->longitudinalVelocity_d = iPrevModelStates_s.longitudinalVelocity_d;
 }
 
 void cCombinedVehicleModel::setYawAngleStates(double pYawAngle_d) {

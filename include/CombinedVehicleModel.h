@@ -22,8 +22,6 @@ enum class eGNSSState {off = 0, SBAS = 1, pseudorange = 2, rtk_float = 3, rtk_fi
 class cCombinedVehicleModel {
 private:
     // Private Variables
-    sVehicleParameters  iVehicleParameters_s;
-    sMeasuredValues     iMeasuredValues_s;
     sMeasuredValues     iPrevMeasuredValues_s;
     sModelStates        iModelStates_s;
     sModelStates        iPrevModelStates_s;
@@ -45,7 +43,13 @@ private:
     matrix<double>      iPrevPKinEKFwoGNSS_m;
 
 public:
+    // Public Variables
+    sVehicleParameters  iVehicleParameters_s;
+    sMeasuredValues     iMeasuredValues_s;
+
+public:
     // Public functions
+    cCombinedVehicleModel();
     cCombinedVehicleModel(std::string pVehicleType_s);
     ~cCombinedVehicleModel();
     void initEKFMatrices(void);
@@ -56,6 +60,7 @@ public:
     void setMeasuredValuesIMU(double pLongitudinalAcceleration_d, double pLateralAcceleration_d, double pVerticalAcceleration_d, double pRollRate_d, double pPitchRate_d, double pYawRate_d);
     void setPrevMeasuredValues(void);
     void setModelStates(double pBeta_d, double pYawRate_d, double pYawAngle_d, double pLateralAcceleration_d, double pPositionX_d, double pPositionY_d, double pLongitudinalVelocity_d, double pLateralVelocity_d);
+    void getPrevModelStates(sModelStates* pOutPrevModelStates_s);
     void setPrevModelStates(void);
     void iterateModel(double pTs_d, eEstimationMode pEstimationMode_e, eGNSSState pGNSSState_e, double pKinSpeedLimit_d);
     void getModelStates(sModelStates* pOutModelStates_s);

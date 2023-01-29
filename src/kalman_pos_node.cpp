@@ -10,662 +10,292 @@
 #include <novatel_gps_msgs/Inspvax.h>
 #include "visualization_msgs/Marker.h"
 
-//#include "geometry_msgs/Vector3.h"
-//#include "geometry_msgs/Quaternion.h"
 #include "tf/transform_datatypes.h"
-//#include "LinearMath/btMatrix3x3.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
 
-#include <tf2/buffer_core.h>
+#include "PositionEstimation.h"
 
-#include "CombinedVehicleModel.h"
-#include "OrientationEstimation.h"
-
-sensor_msgs::NavSatFix gNavSatFixMsg_msg;
-geometry_msgs::PoseStamped gPositionMsg_msg;
-geometry_msgs::PoseStamped gCogPositionMsg_msg;
-sensor_msgs::Imu gIMUMsg_msg;
-autoware_msgs::VehicleStatus gVehicleStatusMsg_msg;
-novatel_gps_msgs::Inspvax gNovatelStatusMsg_msg;
-std_msgs::String gDuroStatusMsg_msg;
+sensor_msgs::NavSatFix gROSNavSatFixMsg_msg;
+geometry_msgs::PoseStamped gROSPositionMsg_msg;
+geometry_msgs::PoseStamped gROSCogPositionMsg_msg;
+sensor_msgs::Imu gROSIMUMsg_msg;
+autoware_msgs::VehicleStatus gROSVehicleStatusMsg_msg;
+novatel_gps_msgs::Inspvax gROSNovatelStatusMsg_msg;
+std_msgs::String gROSDuroStatusMsg_msg;
 
 bool gPoseMsgArrived_b = false;
 bool gNavSatFixMsgArrived_b = false;
 bool gIMUMsgArrived_b = false;
 bool gVehicleStatusMsgArrived_b = false;
-bool gNovatelStatusMsgMsgArrived_b = false;
+bool gNovatelStatusMsgArrived_b = false;
 bool gDuroStatusMsgArrived_b = false;
-
-std::string gVehicleType_s = "leaf";
-std::string gGnssSource_s = "nova";
 
 void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     gPoseMsgArrived_b = true;
-    gPositionMsg_msg = *msg;
-/*
-    if (gGnssSource_s == "nova") {
-        if (gVehicleType_s == "leaf") {
-            tf2::BufferCore lBufferCore_c;
-
-            geometry_msgs::TransformStamped lNovaTransform_tr_tr;
-            lNovaTransform_tr.header.frame_id = "map";
-            lNovaTransform_tr.child_frame_id = "nova";
-            lNovaTransform_tr.transform.translation.x = gPositionMsg_msg.pose.position.x;
-            lNovaTransform_tr.transform.translation.y = gPositionMsg_msg.pose.position.y;
-            lNovaTransform_tr.transform.translation.z = gPositionMsg_msg.pose.position.z;
-            lNovaTransform_tr.transform.rotation = gPositionMsg_msg.pose.orientation;
-            lBufferCore_c.setTransform(lNovaTransform_tr, "default_authority", true);
-
-            geometry_msgs::TransformStamped lCoGTransform;
-            lCoGTransform.header.frame_id = "nova";
-            lCoGTransform.child_frame_id = "cog";
-            lCoGTransform.transform.translation.x = 0.208;
-            lCoGTransform.transform.translation.y = -0.408;
-            lCoGTransform.transform.translation.z = -1.278;
-            lCoGTransform.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, 0);
-            lBufferCore_c.setTransform(lCoGTransform, "default_authority", true);
-
-            geometry_msgs::TransformStamped lTsLookup;
-            lTsLookup = lBufferCore_c.lookupTransform("cog", "map", ros::Time(0));
-            gCogPositionMsg_msg.pose.position.x = lTsLookup.transform.translation.x;
-            gCogPositionMsg_msg.pose.position.y = lTsLookup.transform.translation.y;
-            gCogPositionMsg_msg.pose.position.z = lTsLookup.transform.translation.z;
-            gCogPositionMsg_msg.pose.orientation= lTsLookup.transform.rotation;
-        } else {
-            gCogPositionMsg_msg = gPositionMsg_msg;
-        }
-    } else {
-*/
-        gCogPositionMsg_msg = gPositionMsg_msg;
-//    }
+    gROSPositionMsg_msg = *msg;
+    gROSCogPositionMsg_msg = gROSPositionMsg_msg;
 }
 
 void navSatFixCallback(const sensor_msgs::NavSatFix::ConstPtr& pMsg_msgp)
 {
     gNavSatFixMsgArrived_b = true;
-    gNavSatFixMsg_msg = *pMsg_msgp;
+    gROSNavSatFixMsg_msg = *pMsg_msgp;
 }
 
 void imuCallback(const sensor_msgs::Imu::ConstPtr& pMsg_msgp)
 {
     gIMUMsgArrived_b = true;
-    gIMUMsg_msg = *pMsg_msgp;
+    gROSIMUMsg_msg = *pMsg_msgp;
 }
 
 void vehicleCallback(const autoware_msgs::VehicleStatus::ConstPtr& pMsg_msgp)
 {
     gVehicleStatusMsgArrived_b = true;
-    gVehicleStatusMsg_msg = *pMsg_msgp;
+    gROSVehicleStatusMsg_msg = *pMsg_msgp;
 }
 
 void novatelStatusCallback(const novatel_gps_msgs::Inspvax::ConstPtr& pMsg_msgp)
 {
-    gNovatelStatusMsgMsgArrived_b = true;
-    gNovatelStatusMsg_msg = *pMsg_msgp;
+    gNovatelStatusMsgArrived_b = true;
+    gROSNovatelStatusMsg_msg = *pMsg_msgp;
 }
 
 void duroStatusStringCallback(const std_msgs::String::ConstPtr& pMsg_msgp)
 {
     gDuroStatusMsgArrived_b = true;
-    gDuroStatusMsg_msg = *pMsg_msgp;
+    gROSDuroStatusMsg_msg = *pMsg_msgp;
 }
 
 int main(int argc, char **argv)
 {
-    std::string pose_topic, imu_topic, estimated_pose, estimated_debug_pose, estimatation_accuracy, nav_sat_fix_topic, duro_status_string_topic, inspvax_topic, vehicle_status_topic;
-    bool debug, dynamic_time_calc, do_not_wait_for_gnss_msgs;
-    int loop_rate_hz;
-    int estimation_method;
-    float kinematic_model_max_speed;
-    cCombinedVehicleModel lCombinedVehicleModel_cl("leaf");
-    cOrientationEstimation lOrientationEstimation_cl;
-    bool lFirstIteration_b = true;
-    double lTs_d = 0;
-    unsigned long long lPrevMillisecondsSinceEpoch_u64 = 0;
-    unsigned long long lMillisecondsSinceEpoch_u64 = 0;
-
+    // Declare ROS parameter variables
+    std::string lROSParamPoseTopic_s;
+    std::string lROSParamImuTopic_s;
+    std::string lROSParamEstimatedPoseCogTopic_s; 
+    std::string lROSParamEstimatedPoseBaselinkTopic_s;
+    std::string lROSParamEstimatedTravDistOdom_s;
+    std::string lROSParamEstimatedTravDistEstPos_s;
+    std::string lROSParamEstimationAccuracyTopic_s;
+    std::string lROSParamNavSatFixTopic_s;
+    std::string lROSParamDuroStatusStringTopic_s; 
+    std::string lROSParamInspvaxTopic_s; 
+    std::string lROSParamVehicleStatusTopic_s;
+    std::string lROSParamVehicleType_s;
+    std::string lROSParamGnssSource_s;
+    bool lROSParamDynamicTimeCalcEnabled_b; 
+    bool lROSParamDoNotWaitForGnssMsgs_b;
+    int lROSParamLoopRateHz_i32;
+    int lROSParamEstimationMethod_i32;
+    float lROSParamKinematicModelMaxSpeed_f;
+    
+    // Initialize ROS node
     ros::init(argc, argv, "kalman_pos_node");
-    ros::NodeHandle n;
-    ros::NodeHandle n_private("~");
-    n_private.param<std::string>("pose_topic", pose_topic, "gps/nova/current_pose");
-    n_private.param<std::string>("vehicle_status_topic", vehicle_status_topic, "vehicle_status");
-    n_private.param<std::string>("nav_sat_fix_topic", nav_sat_fix_topic, "gps/nova/fix");
-    n_private.param<std::string>("duro_status_string_topic", duro_status_string_topic, "gps/duro/status_string");
-    n_private.param<std::string>("inspvax_topic", inspvax_topic, "gps/nova/inspvax" );
-    n_private.param<std::string>("imu_topic", imu_topic, "gps/nova/imu");
-    n_private.param<std::string>("est_topic", estimated_pose, "estimated_pose");
-    n_private.param<std::string>("est_debug_topic", estimated_debug_pose, "estimated_debug_pose");
-    n_private.param<std::string>("est_accuracy_topic", estimatation_accuracy, "estimation_accuracy");
-    n_private.param<std::string>("vehicle_type", gVehicleType_s, "leaf");
-    n_private.param<bool>("debug", debug, false);
-    n_private.param<int>("loop_rate_hz", loop_rate_hz, 10);
-    n_private.param<int>("estimation_method", estimation_method, 0);
-    n_private.param<std::string>("gnss_source", gGnssSource_s, "nova");
-    n_private.param<bool>("dynamic_time_calc", dynamic_time_calc, false);
-    n_private.param<bool>("do_not_wait_for_gnss_msgs", do_not_wait_for_gnss_msgs, false);
-    n_private.param<float>("kinematic_model_max_speed", kinematic_model_max_speed, 0.5);
-    ROS_INFO_STREAM("kalman_pos_node started | pose: " << pose_topic
-                    << " | vehicle_status: " << vehicle_status_topic 
-                    << " | debug: " << debug 
-                    << " | nav_sat_fix: " << nav_sat_fix_topic
-                    << " | duro_status_string: " << duro_status_string_topic
-                    << " | imu: " << imu_topic
-                    << " | est: " << estimated_pose
-                    << " | est_debug: " << estimated_debug_pose
-                    << " | est_accuracy: " << estimatation_accuracy
-                    << " | vehicle_type: " << gVehicleType_s
-                    << " | loop_rate_hz: " << loop_rate_hz
-                    << " | estimation_method: " << estimation_method
-                    << " | gnss_source: " << gGnssSource_s 
-                    << " | dynamic_time_calc: " << dynamic_time_calc );
+    ros::NodeHandle lROSNodeHandle_cl;
+    ros::NodeHandle lROSNodeHandlePrivate_cl("~");
+    lROSNodeHandlePrivate_cl.param<std::string>("pose_topic", lROSParamPoseTopic_s, "gps/nova/current_pose");
+    lROSNodeHandlePrivate_cl.param<std::string>("vehicle_status_topic", lROSParamVehicleStatusTopic_s, "vehicle_status");
+    lROSNodeHandlePrivate_cl.param<std::string>("nav_sat_fix_topic", lROSParamNavSatFixTopic_s, "gps/nova/fix");
+    lROSNodeHandlePrivate_cl.param<std::string>("duro_status_string_topic", lROSParamDuroStatusStringTopic_s, "gps/duro/status_string");
+    lROSNodeHandlePrivate_cl.param<std::string>("inspvax_topic", lROSParamInspvaxTopic_s, "gps/nova/inspvax" );
+    lROSNodeHandlePrivate_cl.param<std::string>("imu_topic", lROSParamImuTopic_s, "gps/nova/imu");
+    lROSNodeHandlePrivate_cl.param<std::string>("est_cog_topic", lROSParamEstimatedPoseCogTopic_s, "estimated_pose_cog");
+    lROSNodeHandlePrivate_cl.param<std::string>("est_baselink_topic", lROSParamEstimatedPoseBaselinkTopic_s, "estimated_pose_baselink");
+    lROSNodeHandlePrivate_cl.param<std::string>("est_accuracy_topic", lROSParamEstimationAccuracyTopic_s, "estimation_accuracy");
+    lROSNodeHandlePrivate_cl.param<std::string>("est_trav_distance_odom_topic", lROSParamEstimatedTravDistOdom_s, "estimated_trav_dist_odom");
+    lROSNodeHandlePrivate_cl.param<std::string>("est_trav_distance_est_pos_topic", lROSParamEstimatedTravDistEstPos_s, "estimated_trav_dist_est_pos");
+    lROSNodeHandlePrivate_cl.param<std::string>("vehicle_type", lROSParamVehicleType_s, "leaf");
+    lROSNodeHandlePrivate_cl.param<int>("lROSLoopRate_cl_hz", lROSParamLoopRateHz_i32, 10);
+    lROSNodeHandlePrivate_cl.param<int>("estimation_method", lROSParamEstimationMethod_i32, 0);
+    lROSNodeHandlePrivate_cl.param<std::string>("gnss_source", lROSParamGnssSource_s, "nova");
+    lROSNodeHandlePrivate_cl.param<bool>("dynamic_time_calc", lROSParamDynamicTimeCalcEnabled_b, false);
+    lROSNodeHandlePrivate_cl.param<bool>("do_not_wait_for_gnss_msgs", lROSParamDoNotWaitForGnssMsgs_b, false);
+    lROSNodeHandlePrivate_cl.param<float>("kinematic_model_max_speed", lROSParamKinematicModelMaxSpeed_f, 0.5);
+
+    ROS_INFO_STREAM("kalman_pos_node started | pose: " << lROSParamPoseTopic_s
+                    << " | vehicle_status: " << lROSParamVehicleStatusTopic_s 
+                    << " | nav_sat_fix: " << lROSParamNavSatFixTopic_s
+                    << " | duro_status_string: " << lROSParamDuroStatusStringTopic_s
+                    << " | imu: " << lROSParamImuTopic_s
+                    << " | est_cog: " << lROSParamEstimatedPoseCogTopic_s
+                    << " | est_bl: " << lROSParamEstimatedPoseBaselinkTopic_s
+                    << " | est_accuracy: " << lROSParamEstimationAccuracyTopic_s
+                    << " | vehicle_type: " << lROSParamVehicleType_s
+                    << " | lROSLoopRate_cl_hz: " << lROSParamLoopRateHz_i32
+                    << " | estimation_method: " << lROSParamEstimationMethod_i32
+                    << " | gnss_source: " << lROSParamGnssSource_s 
+                    << " | dynamic_time_calc_enabled: " << lROSParamDynamicTimeCalcEnabled_b );
     
-    ros::Publisher est_orientationDif = n.advertise<std_msgs::Float64>("estimated_ori_dif", 1000);
-    ros::Publisher est_orientation = n.advertise<std_msgs::Float64>("estimated_ori", 1000);
+    ros::Publisher lROSPubAccuracyMarker_cl = lROSNodeHandle_cl.advertise<visualization_msgs::Marker>( lROSParamEstimationAccuracyTopic_s, 1000 );
+    ros::Publisher lROSPubEstimatedPoseCog_cl = lROSNodeHandle_cl.advertise<geometry_msgs::PoseStamped>(lROSParamEstimatedPoseCogTopic_s, 1000);
+    ros::Publisher lROSPubEstimatedPoseBaselink_cl = lROSNodeHandle_cl.advertise<geometry_msgs::PoseStamped>(lROSParamEstimatedPoseBaselinkTopic_s, 1000);
+    ros::Publisher lROSPubEstimatedTraveledDistanceOdom_cl = lROSNodeHandle_cl.advertise<std_msgs::Float32>(lROSParamEstimatedTravDistOdom_s, 1000);
+    ros::Publisher lROSPubEstimatedTraveledDistanceEstPos_cl = lROSNodeHandle_cl.advertise<std_msgs::Float32>(lROSParamEstimatedTravDistEstPos_s, 1000);
     
-    ros::Publisher accuracy_marker_pub = n.advertise<visualization_msgs::Marker>( estimatation_accuracy, 1000 );
-    ros::Publisher est_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_pose, 1000);
-    ros::Publisher est_debug_pub = n.advertise<geometry_msgs::PoseStamped>(estimated_debug_pose, 1000);
-    ros::Subscriber sub_pose = n.subscribe(pose_topic, 1000, poseCallback);
-    //if (gGnssSource_s == "nova"){
-        ros::Subscriber sub_nav_sat_fix = n.subscribe(nav_sat_fix_topic, 1000, navSatFixCallback);
-    //}
-    ros::Subscriber sub_imu = n.subscribe(imu_topic, 1000, imuCallback);
-    ros::Subscriber sub_vehicle = n.subscribe(vehicle_status_topic, 1000, vehicleCallback);
-    //if (gGnssSource_s == "nova") {
-        ros::Subscriber sub_inspvax = n.subscribe(inspvax_topic, 1000, novatelStatusCallback);
-    //}
-    //if ((gGnssSource_s == "duro") || (gVehicleType_s == "SZEmission")) {
-        ros::Subscriber sub_durostatus = n.subscribe(duro_status_string_topic, 1000, duroStatusStringCallback);
-    //}
-    ros::Rate loop_rate(loop_rate_hz); // 10 Hz
+    ros::Subscriber lROSSubPose_cl = lROSNodeHandle_cl.subscribe(lROSParamPoseTopic_s, 1000, poseCallback);
+    if (lROSParamGnssSource_s == "nova"){
+        ros::Subscriber lROSSubNavSatFix_cl = lROSNodeHandle_cl.subscribe(lROSParamNavSatFixTopic_s, 1000, navSatFixCallback);
+    }
+    ros::Subscriber lROSSubIMU_cl = lROSNodeHandle_cl.subscribe(lROSParamImuTopic_s, 1000, imuCallback);
+    ros::Subscriber lROSSubVehicleStatus_cl = lROSNodeHandle_cl.subscribe(lROSParamVehicleStatusTopic_s, 1000, vehicleCallback);
+    if (lROSParamGnssSource_s == "nova") {
+        ros::Subscriber lROSSubInspvax_cl = lROSNodeHandle_cl.subscribe(lROSParamInspvaxTopic_s, 1000, novatelStatusCallback);
+    }
+    if ((lROSParamGnssSource_s == "duro") || (lROSParamVehicleType_s == "SZEmission")) {
+        ros::Subscriber lROSSubDuroStatus_cl = lROSNodeHandle_cl.subscribe(lROSParamDuroStatusStringTopic_s, 1000, duroStatusStringCallback);
+    }
     
-    lTs_d = 1 / loop_rate_hz;
+    ros::Rate lROSLoopRate_cl(lROSParamLoopRateHz_i32); // 10 Hz
+    
+    tf2_ros::TransformBroadcaster lEstPosBaselinkTransformBroadcaster_cl;
 
     gPoseMsgArrived_b = false;
     gNavSatFixMsgArrived_b = false;
     gIMUMsgArrived_b = false;
     gVehicleStatusMsgArrived_b = false;
-    gNovatelStatusMsgMsgArrived_b = false;
+    gNovatelStatusMsgArrived_b = false;
     gDuroStatusMsgArrived_b = false;
 
-    lCombinedVehicleModel_cl.initVehicleParameters(gVehicleType_s);
-    lCombinedVehicleModel_cl.initEKFMatrices();
-
-    double lPrevMesPosX_d = 0;
-    double lPrevMesPosY_d = 0;
-    double lPrevEstPosX_d = 0;
-    double lPrevEstPosY_d = 0;
-
-    bool lPrevOrientationIsValid_b = false;
-
-    double lKinSpeedLimit_d = kinematic_model_max_speed;
+    cPositionEstimation lPositionEstimation_cl( lROSParamDynamicTimeCalcEnabled_b,
+                                                lROSParamLoopRateHz_i32,
+                                                lROSParamVehicleType_s, 
+                                                lROSParamKinematicModelMaxSpeed_f);
 
     ROS_INFO_STREAM("ROS::OK  " << ros::ok());
 
     while (ros::ok())
     {
-        std_msgs::Float64 est_orientation_msg;
-        std_msgs::Float64 est_orientation_dif_msg;
-        visualization_msgs::Marker est_accuracy_marker;
-        geometry_msgs::PoseStamped est_pose_msg;
-        geometry_msgs::PoseStamped est_debug_pose_msg;
+        visualization_msgs::Marker lROSEstAccuracyMarker_msg;
+        geometry_msgs::PoseStamped lROSEstPoseCog_msg;
+        geometry_msgs::PoseStamped lROSEstPoseBaselink_msg;
+        std_msgs::Float32 lROSEstTravDistOdom_msg;
+        std_msgs::Float32 lROSEstTravDistEstPos_msg;
+        double lAccuracyScaleFactor_d = 10;
 
-        eEstimationMode lEstimationMode_e = eEstimationMode::ekf;
-        eGNSSState lGNSSState_e = eGNSSState::off;
-
-        int lAccuracyScaleFactor_d = 10;
-    
-        /*
-        ROS_INFO_STREAM("Pose Arrived " << gPoseMsgArrived_b 
-                                        << "  | IMU Arrived: " << gIMUMsgArrived_b 
-                                        << "  | Status Arrived: " << gVehicleStatusMsgArrived_b
-                                        << "  | Duro Status Arrived: " << gDuroStatusMsgArrived_b
-                                        << "  | Nova Status Arrived: " << gNovatelStatusMsgMsgArrived_b
-                                        << "  | NavSatFix Arrived: " << gNavSatFixMsgArrived_b);
-        */
-                                        
-        if ((gPoseMsgArrived_b || do_not_wait_for_gnss_msgs) && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
-            
-            sModelStates lCurrentModelStates_s;
-
+        if ((gPoseMsgArrived_b || lROSParamDoNotWaitForGnssMsgs_b) && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
+            sModelStates lCurrentModelStates_st;
             double lTmpRoll_d;
             double lTmpPitch_d;
             double lTmpYaw_d;
 
             tf::Quaternion lTmpQuternion_c(
-                gCogPositionMsg_msg.pose.orientation.x,
-                gCogPositionMsg_msg.pose.orientation.y,
-                gCogPositionMsg_msg.pose.orientation.z,
-                gCogPositionMsg_msg.pose.orientation.w);
+                gROSCogPositionMsg_msg.pose.orientation.x,
+                gROSCogPositionMsg_msg.pose.orientation.y,
+                gROSCogPositionMsg_msg.pose.orientation.z,
+                gROSCogPositionMsg_msg.pose.orientation.w);
             tf::Matrix3x3 lTmpMatrix(lTmpQuternion_c);
 
             lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
 
-            //lCombinedVehicleModel_cl.setPrevMeasuredValues();
-            if ((pose_topic == "gps/duro/current_pose") && (gVehicleType_s == "SZEmission")) {
-                lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lOrientationEstimation_cl.iFiltMesOri_d);
+            if ((lROSParamPoseTopic_s == "gps/duro/current_pose") && (lROSParamVehicleType_s == "SZEmission")) {
+                lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lPositionEstimation_cl.getFiltMesOri());
             } else {
-                lCombinedVehicleModel_cl.setMeasuredValuesGNSS(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
+                lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
-            if ((imu_topic == "gps/duro/imu") || (imu_topic == "/imu/data")) {
-                lCombinedVehicleModel_cl.setMeasuredValuesIMU(gIMUMsg_msg.linear_acceleration.x, gIMUMsg_msg.linear_acceleration.y, gIMUMsg_msg.linear_acceleration.z, gIMUMsg_msg.angular_velocity.x, gIMUMsg_msg.angular_velocity.y, -1*gIMUMsg_msg.angular_velocity.z);
+            if ((lROSParamImuTopic_s == "gps/duro/imu") || (lROSParamImuTopic_s == "/imu/data")) {
+                lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x, gROSIMUMsg_msg.linear_acceleration.y, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, -1*gROSIMUMsg_msg.angular_velocity.z);
             } else {
-                lCombinedVehicleModel_cl.setMeasuredValuesIMU(gIMUMsg_msg.linear_acceleration.x, gIMUMsg_msg.linear_acceleration.y, gIMUMsg_msg.linear_acceleration.z, gIMUMsg_msg.angular_velocity.x, gIMUMsg_msg.angular_velocity.y, gIMUMsg_msg.angular_velocity.z);    
+                lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x, gROSIMUMsg_msg.linear_acceleration.y, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, gROSIMUMsg_msg.angular_velocity.z);    
             }
-            lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1, gVehicleStatusMsg_msg.speed*1);
-            //lCombinedVehicleModel_cl.setMeasuredValuesVehicleState(gVehicleStatusMsg_msg.angle*1.1, gVehicleStatusMsg_msg.speed);
-                
-            if (lFirstIteration_b) {
-                lCombinedVehicleModel_cl.setPrevEKFMatrices();
-                lCombinedVehicleModel_cl.setPrevMeasuredValues();
-                if ((pose_topic == "gps/duro/current_pose") && (gVehicleType_s == "SZEmission")) {
-                    lCombinedVehicleModel_cl.setModelStates(0, gIMUMsg_msg.angular_velocity.z, 0, gIMUMsg_msg.linear_acceleration.y, gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gVehicleStatusMsg_msg.speed, 0);
-                } else {
-                    lCombinedVehicleModel_cl.setModelStates(0, gIMUMsg_msg.angular_velocity.z, lTmpYaw_d, gIMUMsg_msg.linear_acceleration.y, gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, gVehicleStatusMsg_msg.speed, 0);
-                }
-                lFirstIteration_b = false;
+            lPositionEstimation_cl.setMeasuredValuesVehicleState(gROSVehicleStatusMsg_msg.angle*1, gROSVehicleStatusMsg_msg.speed*1);
    
-                lPrevMesPosX_d = gCogPositionMsg_msg.pose.position.x;
-                lPrevMesPosY_d = gCogPositionMsg_msg.pose.position.y;
-                lPrevEstPosX_d = gCogPositionMsg_msg.pose.position.x;
-                lPrevEstPosY_d = gCogPositionMsg_msg.pose.position.y;
-            }
+            lPositionEstimation_cl.iterateEstimation(lROSParamGnssSource_s,
+                                                     lROSParamEstimationMethod_i32,
+                                                     lROSParamVehicleType_s,
+                                                     gDuroStatusMsgArrived_b,
+                                                     gROSDuroStatusMsg_msg.data,
+                                                     gNovatelStatusMsgArrived_b,
+                                                     gROSNovatelStatusMsg_msg.position_type);
+            lPositionEstimation_cl.getModelStates(&lCurrentModelStates_st);
 
-            lKinSpeedLimit_d = kinematic_model_max_speed;
+            lAccuracyScaleFactor_d = lPositionEstimation_cl.getAccuracyScaleFactor();
 
-            if (gGnssSource_s == "nova") {
-                if ((!gNovatelStatusMsgMsgArrived_b) || (estimation_method == 0)) {
-                    lEstimationMode_e = eEstimationMode::model;
-                    lGNSSState_e = eGNSSState::off;
-                    lAccuracyScaleFactor_d = 10;
-                    //ROS_INFO_STREAM(1);
-                } else {
-                    if(gNovatelStatusMsg_msg.position_type ==  "NONE"){ //POSITION_TYPE_NONE
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        //ROS_INFO_STREAM(1);
-                    }
-                    else if(gNovatelStatusMsg_msg.position_type ==  "INS_SBAS"){ //POSITION_TYPE_SBAS
-                        lEstimationMode_e = eEstimationMode::ekf;
-                        lGNSSState_e = eGNSSState::rtk_float;
-                        //lEstimationMode_e = eEstimationMode::model;
-                        //lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                        //ROS_INFO_STREAM("INS_SBAS");
-                    }
-                    else if(gNovatelStatusMsg_msg.position_type ==  "SINGLE"){ //POSITION_TYPE_PSEUDORANGE_SINGLE_POINT
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                        //ROS_INFO_STREAM(3);
-                    }
-                    else if(gNovatelStatusMsg_msg.position_type ==  "PSRDIFF"){ //POSITION_TYPE_PSEUDORANGE_DIFFERENTIAL
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                        //ROS_INFO_STREAM(4);
-                    }
-                    else if(gNovatelStatusMsg_msg.position_type ==  "INS_RTKFLOAT"){ //POSITION_TYPE_RTK_FLOAT
-                        lEstimationMode_e = eEstimationMode::ekf;
-                        lGNSSState_e = eGNSSState::rtk_float;
-                        lAccuracyScaleFactor_d = 2.5;
-                        //ROS_INFO_STREAM(5);
-                    }
-                    else if(gNovatelStatusMsg_msg.position_type ==  "INS_RTKFIXED"){ //POSITION_TYPE_RTK_FIXED
-                        lEstimationMode_e = eEstimationMode::ekf;
-                        lGNSSState_e = eGNSSState::rtk_fixed;
-                        lAccuracyScaleFactor_d = 1;
-                        //ROS_INFO_STREAM(6);
-                    }
-                    else{
-                        lEstimationMode_e = eEstimationMode::model;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        //ROS_INFO_STREAM("else " << gNovatelStatusMsg_msg.position_type);
-                    }
-                }
-            } else if (gGnssSource_s == "duro") {
-                if ((!gDuroStatusMsgArrived_b) || (estimation_method == 0)){
-                    lEstimationMode_e = eEstimationMode::model;
-                    lGNSSState_e = eGNSSState::off;
-                    lAccuracyScaleFactor_d = 10;
-                } else {
-                    if (gDuroStatusMsg_msg.data == "Invalid") {
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                    } else if (gDuroStatusMsg_msg.data == "Single Point Position (SPP)") {
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                    }  else if (gDuroStatusMsg_msg.data == "Differential GNSS (DGNSS)") {
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                    }  else if (gDuroStatusMsg_msg.data == "Float RTK") {
-                        lEstimationMode_e = eEstimationMode::ekf;
-                        lGNSSState_e = eGNSSState::rtk_float;
-                        lAccuracyScaleFactor_d = 2.5;
-                    }  else if (gDuroStatusMsg_msg.data == "Fixed RTK") {
-                        lEstimationMode_e = eEstimationMode::ekf;
-                        lGNSSState_e = eGNSSState::rtk_fixed;
-                        lAccuracyScaleFactor_d = 1;
-                    }  else if (gDuroStatusMsg_msg.data == "Dead Reckoning (DR)") {
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                    }  else if (gDuroStatusMsg_msg.data == "SBAS Position") {
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::pseudorange;
-                        lAccuracyScaleFactor_d = 5;
-                    } else {
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                    }
-                }
-            } else {
-                switch (estimation_method) {
-                    case 0: // Kinematic model without EKF and without GNSS
-                        lEstimationMode_e = eEstimationMode::model;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        lKinSpeedLimit_d = 200;
-                        break;
-                    case 1: // Kinematic + dynamic model without EKF and without GNSS
-                        lEstimationMode_e = eEstimationMode::model;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        lKinSpeedLimit_d = kinematic_model_max_speed;
-                        break;
-                    case 2: // Kinematic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
-                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
-                            lEstimationMode_e = eEstimationMode::model;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = 200;
-                        } else {
-                            if (!lPrevOrientationIsValid_b) {
-                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
-                            }
-                            lEstimationMode_e = eEstimationMode::model;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = 200;
-                        }
-                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
-                        break;
-                    case 3: // Kinematic + dynamic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS) 
-                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
-                            lEstimationMode_e = eEstimationMode::model;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        } else {
-                            if (!lPrevOrientationIsValid_b) {
-                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
-                            }
-                            lEstimationMode_e = eEstimationMode::model;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        }
-                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
-                        break;
-                    case 5: // Kinematic model with EKF and without GNSS
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        lKinSpeedLimit_d = 200;
-                        break;
-                    case 6: // Kinematic + dynaicmodel with EKF and without GNSS
-                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        lKinSpeedLimit_d = kinematic_model_max_speed;
-                        break;
-                    case 7: // Kinematic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
-                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = 200;
-                        } else {
-                            if (!lPrevOrientationIsValid_b) {
-                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
-                            }
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = 200;
-                        }
-                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
-                        break;
-                    case 8: // Kinematic + dynamic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
-                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        } else {
-                            if (!lPrevOrientationIsValid_b) {
-                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
-                            }
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        }
-                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
-                        break;
-                    case 9: // Kinematic + dynamic model with EKF and without GNSS position but with yaw rate calculation (based on GNSS)
-                        if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::SBAS;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        } else {
-                            if (!lPrevOrientationIsValid_b) {
-                                lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
-                            }
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::SBAS;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        }
-                        lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
-                        break;
-
-                    case 10: 
-                        if (gVehicleType_s == "SZEmission") {
-                            if ((!gDuroStatusMsgArrived_b)){
-                                if (!lOrientationEstimation_cl.iOrientationIsValid_b) {
-                                        lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                        lGNSSState_e = eGNSSState::off;
-                                        lAccuracyScaleFactor_d = 10;
-                                        lKinSpeedLimit_d = kinematic_model_max_speed;
-                                    } else {
-                                        if (!lPrevOrientationIsValid_b) {
-                                            lCombinedVehicleModel_cl.setYawAngleStates(lOrientationEstimation_cl.iFiltMesOri_d);
-                                        }
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                    }
-                                    lPrevOrientationIsValid_b = lOrientationEstimation_cl.iOrientationIsValid_b;
-                                    break;
-                            } else {
-                                lKinSpeedLimit_d = kinematic_model_max_speed;
-                                if (gDuroStatusMsg_msg.data == "Invalid") {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                } else if (gDuroStatusMsg_msg.data == "Single Point Position (SPP)") {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                }  else if (gDuroStatusMsg_msg.data == "Differential GNSS (DGNSS)") {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                }  else if (gDuroStatusMsg_msg.data == "Float RTK") {
-                                    lEstimationMode_e = eEstimationMode::ekf;
-                                    lGNSSState_e = eGNSSState::rtk_float;
-                                    lAccuracyScaleFactor_d = 2.5;
-                                }  else if (gDuroStatusMsg_msg.data == "Fixed RTK") {
-                                    lEstimationMode_e = eEstimationMode::ekf;
-                                    lGNSSState_e = eGNSSState::rtk_fixed;
-                                    lAccuracyScaleFactor_d = 1;
-                                }  else if (gDuroStatusMsg_msg.data == "Dead Reckoning (DR)") {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                }  else if (gDuroStatusMsg_msg.data == "SBAS Position") {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                } else {
-                                    lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                    lGNSSState_e = eGNSSState::off;
-                                    lAccuracyScaleFactor_d = 10;
-                                    lKinSpeedLimit_d = kinematic_model_max_speed;
-                                }
-                            }
-                        } else {
-                            lEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            lGNSSState_e = eGNSSState::off;
-                            lAccuracyScaleFactor_d = 10;
-                            lKinSpeedLimit_d = kinematic_model_max_speed;
-                        }
-                        break;
-                    default:
-                        //lEstimationMode_e = eEstimationMode::model;
-                        lEstimationMode_e = eEstimationMode::model;
-                        lGNSSState_e = eGNSSState::off;
-                        lAccuracyScaleFactor_d = 10;
-                        lKinSpeedLimit_d = kinematic_model_max_speed;
-                        break;
-                }
-            }
-
-            struct timeval lTimeval_tv;
-            gettimeofday(&lTimeval_tv, NULL);
-
-            lMillisecondsSinceEpoch_u64 = 
-                (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
-                (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
-
-            if (dynamic_time_calc) {
-                if (lPrevMillisecondsSinceEpoch_u64 == 0) {
-                    lTs_d = 1.0/loop_rate_hz;
-                } else {
-                    lTs_d = (double(lMillisecondsSinceEpoch_u64 - lPrevMillisecondsSinceEpoch_u64)) / 1000.0;
-                }
-            } else {
-                lTs_d = 1.0/loop_rate_hz;
-            }
-            lPrevMillisecondsSinceEpoch_u64 = lMillisecondsSinceEpoch_u64;
-
-            //ROS_INFO_STREAM(lTs_d);
-
-            lCombinedVehicleModel_cl.iterateModel(lTs_d, lEstimationMode_e, lGNSSState_e, lKinSpeedLimit_d);
-            lCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_s);
-
-            est_pose_msg.header.stamp = ros::Time::now();
-            est_pose_msg.header.frame_id = "map";
-            est_pose_msg.pose.position.x = lCurrentModelStates_s.positionX_d;
-            est_pose_msg.pose.position.y = lCurrentModelStates_s.positionY_d;
-            est_pose_msg.pose.position.z = 0;
-
-            if ( (gVehicleStatusMsg_msg.speed > 0.1) &&
-                 (lPrevMesPosX_d != gCogPositionMsg_msg.pose.position.x) &&
-                 (lPrevMesPosY_d != gCogPositionMsg_msg.pose.position.y) &&
-                 (lPrevEstPosX_d != lCurrentModelStates_s.positionX_d) &&
-                 (lPrevEstPosY_d != lCurrentModelStates_s.positionY_d)) {
-
-                lOrientationEstimation_cl.addPosition(gCogPositionMsg_msg.pose.position.x, gCogPositionMsg_msg.pose.position.y, lCurrentModelStates_s.positionX_d, lCurrentModelStates_s.positionY_d);
-            }
-
-            if (lOrientationEstimation_cl.iFilteredMeanDifference_d > -1000) {
-                est_orientation_dif_msg.data = lOrientationEstimation_cl.iFilteredMeanDifference_d;
-            } else {
-                est_orientation_dif_msg.data = 0;
-            }
-            est_orientationDif.publish(est_orientation_dif_msg);
-
-            if (lOrientationEstimation_cl.iFiltEstOri_d > -1000) {
-                est_orientation_msg.data = lOrientationEstimation_cl.iFiltMesOri_d;
-            } else {
-                est_orientation_msg.data = 0;
-            }
-            est_orientation.publish(est_orientation_msg);
-
-            lPrevMesPosX_d = gCogPositionMsg_msg.pose.position.x;
-            lPrevMesPosY_d = gCogPositionMsg_msg.pose.position.y;
-            lPrevEstPosX_d = lCurrentModelStates_s.positionX_d;
-            lPrevEstPosY_d = lCurrentModelStates_s.positionY_d;
+            lROSEstPoseCog_msg.header.stamp = ros::Time::now();
+            lROSEstPoseCog_msg.header.frame_id = "lROSEstPoseCog_msg";
+            lROSEstPoseCog_msg.pose.position.x = lCurrentModelStates_st.positionX_d;
+            lROSEstPoseCog_msg.pose.position.y = lCurrentModelStates_st.positionY_d;
+            lROSEstPoseCog_msg.pose.position.z = 0;
+            lROSEstPoseCog_msg.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, lCurrentModelStates_st.yawAngle_d);
         }
         else {
-            est_pose_msg.header.stamp = ros::Time::now();
-            est_pose_msg.header.frame_id = "map";
-            est_pose_msg.pose.position.x = 0;
-            est_pose_msg.pose.position.y = 0;
-            est_pose_msg.pose.position.z = 0;
+            lROSEstPoseCog_msg.header.stamp = ros::Time::now();
+            lROSEstPoseCog_msg.header.frame_id = "lROSEstPoseCog_msg";
+            lROSEstPoseCog_msg.pose.position.x = 0;
+            lROSEstPoseCog_msg.pose.position.y = 0;
+            lROSEstPoseCog_msg.pose.position.z = 0;
+            lROSEstPoseCog_msg.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, 0);
         }
 
-        est_pub.publish(est_pose_msg);
+        lROSPubEstimatedPoseCog_cl.publish(lROSEstPoseCog_msg);
 
-        est_accuracy_marker.header.frame_id = "base_link";
-        est_accuracy_marker.header.stamp = ros::Time();
-        est_accuracy_marker.ns = "est_pose";
-        est_accuracy_marker.id = 0;
-        est_accuracy_marker.type = visualization_msgs::Marker::SPHERE;
-        est_accuracy_marker.action = visualization_msgs::Marker::ADD;
-        est_accuracy_marker.pose.position.x = 0.0;
-        est_accuracy_marker.pose.position.y = 0.0;
-        est_accuracy_marker.pose.position.z = 0.6;
+        lROSEstTravDistOdom_msg.data = lPositionEstimation_cl.getTravDistanceOdom();
+        lROSEstTravDistEstPos_msg.data = lPositionEstimation_cl.getTravDistanceEstPos();
+        lROSPubEstimatedTraveledDistanceOdom_cl.publish(lROSEstTravDistOdom_msg);
+        lROSPubEstimatedTraveledDistanceEstPos_cl.publish(lROSEstTravDistEstPos_msg);
+        
+        tf2_ros::Buffer lBuffer_cl;
+
+        lROSEstPoseBaselink_msg.header.frame_id = "lROSEstPoseBaselink_msg";
+        lROSEstPoseBaselink_msg.pose.position.x = -lPositionEstimation_cl.getCogDistanceFromBaselinkX();
+        lROSEstPoseBaselink_msg.pose.position.y =  lPositionEstimation_cl.getCogDistanceFromBaselinkY();
+        lROSEstPoseBaselink_msg.pose.position.z =  lPositionEstimation_cl.getCogDistanceFromBaselinkZ();
+        lROSEstPoseBaselink_msg.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, 0);
+        
+        geometry_msgs::TransformStamped lEstPose_tr;
+        lEstPose_tr.header.frame_id = lROSEstPoseCog_msg.header.frame_id;
+        lEstPose_tr.child_frame_id = lROSEstPoseBaselink_msg.header.frame_id;
+        lEstPose_tr.transform.translation.x = lROSEstPoseCog_msg.pose.position.x;
+        lEstPose_tr.transform.translation.y = lROSEstPoseCog_msg.pose.position.y;
+        lEstPose_tr.transform.translation.z = lROSEstPoseCog_msg.pose.position.z;
+        lEstPose_tr.transform.rotation = lROSEstPoseCog_msg.pose.orientation;
+        lBuffer_cl.setTransform(lEstPose_tr, "default_authority", true);
+        
+        geometry_msgs::TransformStamped lTsLookup_cl;
+        lTsLookup_cl = lBuffer_cl.lookupTransform( lROSEstPoseCog_msg.header.frame_id, lROSEstPoseBaselink_msg.header.frame_id, ros::Time(0));
+
+        tf2::doTransform(lROSEstPoseBaselink_msg, lROSEstPoseBaselink_msg, lTsLookup_cl);
+
+        lROSPubEstimatedPoseBaselink_cl.publish(lROSEstPoseBaselink_msg);
+
+        lROSEstAccuracyMarker_msg.header.frame_id = "base_link";
+        lROSEstAccuracyMarker_msg.header.stamp = ros::Time();
+        lROSEstAccuracyMarker_msg.ns = lROSParamEstimatedPoseBaselinkTopic_s;
+        lROSEstAccuracyMarker_msg.id = 0;
+        lROSEstAccuracyMarker_msg.type = visualization_msgs::Marker::SPHERE;
+        lROSEstAccuracyMarker_msg.action = visualization_msgs::Marker::ADD;
+        lROSEstAccuracyMarker_msg.pose.position.x = 0.0;
+        lROSEstAccuracyMarker_msg.pose.position.y = 0.0;
+        lROSEstAccuracyMarker_msg.pose.position.z = 0.6;
         /*
-        est_accuracy_marker.pose.position.x = est_pose_msg.pose.position.x;
-        est_accuracy_marker.pose.position.y = est_pose_msg.pose.position.y;
-        est_accuracy_marker.pose.position.z = est_pose_msg.pose.position.z;
+        lROSEstAccuracyMarker_msg.pose.position.x = lROSEstPoseCog_msg.pose.position.x;
+        lROSEstAccuracyMarker_msg.pose.position.y = lROSEstPoseCog_msg.pose.position.y;
+        lROSEstAccuracyMarker_msg.pose.position.z = lROSEstPoseCog_msg.pose.position.z;
         */
-        est_accuracy_marker.pose.orientation.x = 0.0;
-        est_accuracy_marker.pose.orientation.y = 0.0;
-        est_accuracy_marker.pose.orientation.z = 0.0;
-        est_accuracy_marker.pose.orientation.w = 1.0;
+        lROSEstAccuracyMarker_msg.pose.orientation.x = 0.0;
+        lROSEstAccuracyMarker_msg.pose.orientation.y = 0.0;
+        lROSEstAccuracyMarker_msg.pose.orientation.z = 0.0;
+        lROSEstAccuracyMarker_msg.pose.orientation.w = 1.0;
         if (gNavSatFixMsgArrived_b) {
-            est_accuracy_marker.scale.x = lAccuracyScaleFactor_d * (sqrt(gNavSatFixMsg_msg.position_covariance[0] * gNavSatFixMsg_msg.position_covariance[4]))/2;
-            est_accuracy_marker.scale.y = lAccuracyScaleFactor_d * (sqrt(gNavSatFixMsg_msg.position_covariance[0] * gNavSatFixMsg_msg.position_covariance[4]))/2;
-            est_accuracy_marker.scale.z = lAccuracyScaleFactor_d * (sqrt(gNavSatFixMsg_msg.position_covariance[0] * gNavSatFixMsg_msg.position_covariance[4]))/2;            
+            lROSEstAccuracyMarker_msg.scale.x = lAccuracyScaleFactor_d * (sqrt(gROSNavSatFixMsg_msg.position_covariance[0] * gROSNavSatFixMsg_msg.position_covariance[4]))/2;
+            lROSEstAccuracyMarker_msg.scale.y = lAccuracyScaleFactor_d * (sqrt(gROSNavSatFixMsg_msg.position_covariance[0] * gROSNavSatFixMsg_msg.position_covariance[4]))/2;
+            lROSEstAccuracyMarker_msg.scale.z = lAccuracyScaleFactor_d * (sqrt(gROSNavSatFixMsg_msg.position_covariance[0] * gROSNavSatFixMsg_msg.position_covariance[4]))/2;            
         } else {
-            est_accuracy_marker.scale.x = lAccuracyScaleFactor_d * 10;
-            est_accuracy_marker.scale.y = lAccuracyScaleFactor_d * 10;
-            est_accuracy_marker.scale.z = lAccuracyScaleFactor_d * 10;
+            lROSEstAccuracyMarker_msg.scale.x = lAccuracyScaleFactor_d * 10;
+            lROSEstAccuracyMarker_msg.scale.y = lAccuracyScaleFactor_d * 10;
+            lROSEstAccuracyMarker_msg.scale.z = lAccuracyScaleFactor_d * 10;
         }
-        est_accuracy_marker.color.a = 0.3; // Don't forget to set the alpha!
-        est_accuracy_marker.color.r = 0.1;
-        est_accuracy_marker.color.g = 0.8;
-        est_accuracy_marker.color.b = 0.4;
+        lROSEstAccuracyMarker_msg.color.a = 0.3; // Don't forget to set the alpha!
+        lROSEstAccuracyMarker_msg.color.r = 0.1;
+        lROSEstAccuracyMarker_msg.color.g = 0.8;
+        lROSEstAccuracyMarker_msg.color.b = 0.4;
         //only if using a MESH_RESOURCE marker type:
-        //est_accuracy_marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
-        accuracy_marker_pub.publish( est_accuracy_marker );
+        //lROSEstAccuracyMarker_msg.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+        lROSPubAccuracyMarker_cl.publish( lROSEstAccuracyMarker_msg );
 
-
-      if (debug){
-        est_debug_pose_msg.header.stamp = ros::Time::now();
-        est_debug_pub.publish(est_debug_pose_msg);
-      }
-      ros::spinOnce();
-      loop_rate.sleep();
+        ros::spinOnce();
+        lROSLoopRate_cl.sleep();
     }
-
-
     return 0;
 }

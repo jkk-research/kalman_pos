@@ -22,7 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   autoware_msgs
   novatel_gps_msgs
-  tf
+  tf2
+  tf2_ros
 )
 
 ###################################
@@ -72,6 +73,7 @@ include_directories(
 #     src/KinematicVehicleModel.cpp
 #     )
 
+add_library(PositionEstimation src/PositionEstimation.cpp ./include/PositionEstimation.h)
 add_library(OrientationEstimation src/OrientationEstimation.cpp ./include/VehicleModelTypeDef.h)
 add_library(CombinedVehicleModel src/CombinedVehicleModel.cpp ./include/VehicleModelTypeDef.h)
 add_library(DynamicVehicleModel src/DynamicVehicleModel.cpp ./include/VehicleModelTypeDef.h)
@@ -83,7 +85,7 @@ add_library(DynamicVehicleModelEKFwoGNSS src/DynamicVehicleModelEKFwoGNSS.cpp ./
 add_library(KinematicVehicleModelEKFwoGNSS src/KinematicVehicleModelEKFwoGNSS.cpp ./include/VehicleModelTypeDef.h)
 
 target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel KinematicVehicleModel2 DynamicVehicleModelEKF KinematicVehicleModelEKF DynamicVehicleModelEKFwoGNSS KinematicVehicleModelEKFwoGNSS)
-
+target_link_libraries(PositionEstimation PUBLIC CombinedVehicleModel OrientationEstimation)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -101,7 +103,7 @@ target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicV
 add_executable(kalman_pos_node src/kalman_pos_node.cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(kalman_pos_node OrientationEstimation CombinedVehicleModel ${catkin_LIBRARIES})
+target_link_libraries(kalman_pos_node PositionEstimation ${catkin_LIBRARIES})
 
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(kalman_pos_no_aw src/kalman_pos_no_aw.cpp)
