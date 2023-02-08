@@ -38,10 +38,10 @@ roslaunch kalman_pos kalman_pos01.launch
 ```
 
 ### Parameters
--pose_topic
-  -type: string
-  -default value: gps/duro/current_pose
-  -description: the name of the GNSS position topic (subscriber, geometry_msgs::PoseStamped)
+- pose_topic
+  - type: string
+  - default value: gps/duro/current_pose
+  - description: the name of the GNSS position topic (subscriber, geometry_msgs::PoseStamped)
 -vehicle_status_topic
   -type: string 
   -default value: vehicle_status
