@@ -20,11 +20,16 @@ source ~/.bashrc
 ```mermaid
 flowchart LR
 
-A[imu] -->|sensor_msgs/Imu| D(kalman_pos)
-B[current_pose] -->|geometry_msgs/PoseStamped| D
-C[vehicle_status] -->|autoware_msgs/VehicleStatus| D
-D --> |geometry_msgs/PoseStamped| E[estimated_pose]
-D --> |geometry_msgs/PoseStamped| F[estimated_debug_pose]
+A[imu] -->|sensor_msgs/Imu| F(kalman_pos)
+B[current_pose] -->|geometry_msgs/PoseStamped| F
+C[vehicle_status] -->|autoware_msgs/VehicleStatus| F
+D[nova_fix] -->|sensor_msgs/NavSatFix| F
+E[duro_status] -->|std_msgs::String| F
+F --> |geometry_msgs/PoseStamped| G[estimated_pose_cog]
+F --> |geometry_msgs/PoseStamped| H[estimated_pose_baselink]
+F --> |std_msgs/Float32| I[distance]
+F --> |std_msgs/Float32| J[estimated_trav_dist_est_pos]
+F --> |visualization_msgs/Marker| K[estimation_accuracy]
 ```
 
 ## Run
@@ -90,17 +95,17 @@ roslaunch kalman_pos kalman_pos01.launch
   - type: int 
   - default value: 8
   - description: the estimation method, only works if the gnss_source is "none"
-    0. Kinematic model with EKF and without GNSS position; initial GNSS based orientation estimation disabled
-    1. Kinematic + dynamic model without EKF and GNSS position; initial GNSS based orientation estimation disabled
-    2. Kinematic model without EKF and GNSS position; initial GNSS based orientation estimation enabled
-    3. Kinematic + dynamic model without EKF and GNSS position; initial GNSS based orientation estimation enabled
-    4. Currently not used
-    5. Kinematic model with EKF and without GNSS; initial GNSS based orientation estimation disabled
-    6. Kinematic + dynamic model with EKF and without GNSS position; initial GNSS based orientation estimation disabled (USE THIS AS DEFAULT FOR ESTIMATION WITHOUT GNSS)
-    7. Kinematic model with EKF and without GNSS position; initial GNSS based orientation estimation enabled
-    8. Kinematic + dynamic model with EKF and without GNSS position; initial GNSS based orientation estimation enabled 
-    9. Currently used for debugging
-    10. Used only when the vehicle_type is "SZEmission" and GNSS is based on Duro. Automatically switch between the different estimation methods
+    - 0: Kinematic model with EKF and without GNSS position; initial GNSS based orientation estimation disabled
+    - 1: Kinematic + dynamic model without EKF and GNSS position; initial GNSS based orientation estimation disabled
+    - 2: Kinematic model without EKF and GNSS position; initial GNSS based orientation estimation enabled
+    - 3: Kinematic + dynamic model without EKF and GNSS position; initial GNSS based orientation estimation enabled
+    - 4: Currently not used
+    - 5: Kinematic model with EKF and without GNSS; initial GNSS based orientation estimation disabled
+    - 6: Kinematic + dynamic model with EKF and without GNSS position; initial GNSS based orientation estimation disabled (USE THIS AS DEFAULT FOR ESTIMATION WITHOUT GNSS)
+    - 7: Kinematic model with EKF and without GNSS position; initial GNSS based orientation estimation enabled
+    - 8: Kinematic + dynamic model with EKF and without GNSS position; initial GNSS based orientation estimation enabled 
+    - 9: Currently used for debugging
+    - 10: Used only when the vehicle_type is "SZEmission" and GNSS is based on Duro. Automatically switch between the different estimation methods
 - gnss_source 
   - type: string 
   - default value: none
