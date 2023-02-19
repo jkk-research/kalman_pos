@@ -153,9 +153,9 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lxPre_v(3) = lPositionY_d;
 	lxPre_v(4) = lYawAngle_d;
 
-ly_v(0) = lMesBasedLongitudinalVelocity_d;
-ly_v(1) = lMesBasedLateralVelocity_d;
-ly_v(2) = lMesYawRate_d;
+	ly_v(0) = lMesBasedLongitudinalVelocity_d;
+	ly_v(1) = lMesBasedLateralVelocity_d;
+	ly_v(2) = lMesYawRate_d;
 	//ly_v(0) = lMesBasedLongitudinalVelocity_d;
 	//ly_v(1) = lMesBasedLateralVelocity_d;
 	//ly_v(2) = lMesPositionX_d;
@@ -277,7 +277,7 @@ ly_v(2) = lMesYawRate_d;
 	lH_m(1, 4) = 0;
 
 	// TODO: tan or sin (it have to be checked)?
-	lH_m(2, 0) = pVehicleParameters_s.l2_d * tan(lBeta_d);
+	lH_m(2, 0) = tan(lBeta_d) / pVehicleParameters_s.l2_d;
 	lH_m(2, 1) = 0;
 	lH_m(2, 2) = 0;
 	lH_m(2, 3) = 0;
