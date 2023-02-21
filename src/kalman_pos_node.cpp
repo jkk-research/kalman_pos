@@ -193,7 +193,7 @@ int main(int argc, char **argv)
             lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
 
             if ((lROSParamPoseTopic_s == "gps/duro/current_pose") && (lROSParamVehicleType_s == "SZEmission")) {
-                lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lPositionEstimation_cl.getFiltMesOri());
+                lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lPositionEstimation_cl.getFiltMeasOri());
             } else {
                 lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }

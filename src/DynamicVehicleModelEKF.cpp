@@ -144,13 +144,13 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 	double lPositionY_d			   = dynEKFPositionYCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lLateralVelocity_d      = dynEKFLateralVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
 	double lLongitudinalVelocity_d = dynEKFLongitudinalVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
-	double lMesYawRate_d		   = pPrevMeasuredValues_s.yawRate_d;
-	double lMesYawAngle_d		   = pPrevMeasuredValues_s.yawAngle_d;
-	double lMesLateralAcc_d		   = pPrevMeasuredValues_s.lateralAcceleration_d;
-	double lMesPositionX_d		   = pPrevMeasuredValues_s.positionX_d;
-	double lMesPositionY_d		   = pPrevMeasuredValues_s.positionY_d;
-	double lPevMesVehicleSpeed_d   = pPrevMeasuredValues_s.vehicleSpeed_d;
-	double lPrevMesLateralAcc_d    = pPrevMeasuredValues_s.lateralAcceleration_d;
+	double lMeasYawRate_d		   = pPrevMeasuredValues_s.yawRate_d;
+	double lMeasYawAngle_d		   = pPrevMeasuredValues_s.yawAngle_d;
+	double lMeasLateralAcc_d		   = pPrevMeasuredValues_s.lateralAcceleration_d;
+	double lMeasPositionX_d		   = pPrevMeasuredValues_s.positionX_d;
+	double lMeasPositionY_d		   = pPrevMeasuredValues_s.positionY_d;
+	double lPrevMeasVehicleSpeed_d   = pPrevMeasuredValues_s.vehicleSpeed_d;
+	double lPrevMeasLateralAcc_d    = pPrevMeasuredValues_s.lateralAcceleration_d;
 
 
 	vector<double> lh_v(5);
@@ -166,7 +166,7 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 	matrix<double> lM_m(5, 5);
 	matrix<double> lI_m(5, 5);
 	
-	lPevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	lPrevMeasVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 
 	lh_v(0) = lYawRate_d;
 	lh_v(1) = lYawAngle_d;
@@ -180,11 +180,11 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 	lxPre_v(3) = lPositionX_d;
 	lxPre_v(4) = lPositionY_d;
 
-	ly_v(0) = lMesYawRate_d;
-	ly_v(1) = lMesYawAngle_d;
-	ly_v(2) = lMesLateralAcc_d;
-	ly_v(3) = lMesPositionX_d;
-	ly_v(4) = lMesPositionY_d;
+	ly_v(0) = lMeasYawRate_d;
+	ly_v(1) = lMeasYawAngle_d;
+	ly_v(2) = lMeasLateralAcc_d;
+	ly_v(3) = lMeasPositionX_d;
+	ly_v(4) = lMeasPositionY_d;
 
 	lL_m(0, 0) = 1;
 	lL_m(0, 1) = 0;
@@ -276,16 +276,16 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 	lI_m(4, 3) = 0;
 	lI_m(4, 4) = 1;
 	
-	if (lPevMesVehicleSpeed_d != 0) {
-		lF_m(0, 0) = (1 - pTs_d * ((pVehicleParameters_s.c1_d + pVehicleParameters_s.c2_d) / (pVehicleParameters_s.m_d * lPevMesVehicleSpeed_d)));
-		lF_m(0, 1) = ((pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * (lPevMesVehicleSpeed_d * lPevMesVehicleSpeed_d)) - 1) * pTs_d;
+	if (lPrevMeasVehicleSpeed_d != 0) {
+		lF_m(0, 0) = (1 - pTs_d * ((pVehicleParameters_s.c1_d + pVehicleParameters_s.c2_d) / (pVehicleParameters_s.m_d * lPrevMeasVehicleSpeed_d)));
+		lF_m(0, 1) = ((pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * (lPrevMeasVehicleSpeed_d * lPrevMeasVehicleSpeed_d)) - 1) * pTs_d;
 		lF_m(0, 2) = 0;
 		lF_m(0, 3) = 0;
 		lF_m(0, 4) = 0;
 
 		lF_m(1, 0) = pTs_d * (-pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d + pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d) / pVehicleParameters_s.jz_d;
 		// TODO: Verify l1^2 and l2^2 is correct
-		lF_m(1, 1) = (1 - (pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lPevMesVehicleSpeed_d * pVehicleParameters_s.jz_d)));
+		lF_m(1, 1) = (1 - (pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lPrevMeasVehicleSpeed_d * pVehicleParameters_s.jz_d)));
 		lF_m(1, 2) = 0;
 		lF_m(1, 3) = 0;
 		lF_m(1, 4) = 0;
@@ -298,15 +298,15 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 
 		lF_m(3, 0) = 0;
 		lF_m(3, 1) = 0;
-		lF_m(3, 2) = sin(lPrevYawAngle_d) * -pTs_d * lPevMesVehicleSpeed_d  +
-			cos(lPrevYawAngle_d) * lPrevMesLateralAcc_d * (-(1 / 2) * (pTs_d * pTs_d));
+		lF_m(3, 2) = sin(lPrevYawAngle_d) * -pTs_d * lPrevMeasVehicleSpeed_d  +
+			cos(lPrevYawAngle_d) * lPrevMeasLateralAcc_d * (-(1 / 2) * (pTs_d * pTs_d));
 		lF_m(3, 3) = 1;
 		lF_m(3, 4) = 0;
 
 		lF_m(4, 0) = 0;
 		lF_m(4, 1) = 0;
-		lF_m(4, 2) = cos(lPrevYawAngle_d) * pTs_d * lPevMesVehicleSpeed_d +
-			sin(lPrevYawAngle_d) * lPrevMesLateralAcc_d * (-(1 / 2) * (pTs_d * pTs_d));
+		lF_m(4, 2) = cos(lPrevYawAngle_d) * pTs_d * lPrevMeasVehicleSpeed_d +
+			sin(lPrevYawAngle_d) * lPrevMeasLateralAcc_d * (-(1 / 2) * (pTs_d * pTs_d));
 		lF_m(4, 3) = 0;
 		lF_m(4, 4) = 1;
 	}
@@ -342,7 +342,7 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 		lF_m(4, 4) = 0;
 	}
 
-	if (lPevMesVehicleSpeed_d != 0) {
+	if (lPrevMeasVehicleSpeed_d != 0) {
 		lH_m(0, 0) = 0;
 		lH_m(1, 0) = 0;
 		lH_m(2, 0) = -(pVehicleParameters_s.c1_d + pVehicleParameters_s.c2_d) / pVehicleParameters_s.m_d;
@@ -351,7 +351,7 @@ void dynEKFEstimate(sModelStates &pOutModelStates_s, matrix<double> &pOutP_m, sV
 
 		lH_m(0, 1) = 1;
 		lH_m(1, 1) = 0;
-		lH_m(2, 1) = (pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * lPevMesVehicleSpeed_d);
+		lH_m(2, 1) = (pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d - pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d) / (pVehicleParameters_s.m_d * lPrevMeasVehicleSpeed_d);
 		lH_m(3, 1) = 0;
 		lH_m(4, 1) = 0;
 

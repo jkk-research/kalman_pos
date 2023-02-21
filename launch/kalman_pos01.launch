@@ -7,7 +7,7 @@
         <param name="inspvax_topic" type="string" value="gps/nova/inspvax" />
         <param name="imu_topic" type="string" value="/imu/data" />
         <param name="est_cog_topic" type="string" value="estimated_pose_cog" />
-        <param name="est_trav_distance_odom_topic" type="string" value="distance" />
+        <param name="est_trav_distance_odom_topic" type="string" value="estimated_distance" />
         <param name="est_trav_distance_est_pos_topic" type="string" value="estimated_trav_dist_est_pos" />
         <param name="est_baselink_topic" type="string" value="estimated_pose_baselink" />
         <param name="est_accuracy_topic" type="string" value="estimation_accuracy" />

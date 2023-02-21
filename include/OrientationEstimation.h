@@ -8,17 +8,17 @@
 
 class cOrientationEstimation {
     private:
-        double iMesPosBufferX_da[POS_BUFFER_SIZE];
-        double iMesPosBufferY_da[POS_BUFFER_SIZE];
+        double iMeasPosBufferX_da[POS_BUFFER_SIZE];
+        double iMeasPosBufferY_da[POS_BUFFER_SIZE];
         double iEstPosBufferX_da[POS_BUFFER_SIZE];
         double iEstPosBufferY_da[POS_BUFFER_SIZE];
-        double iMesOriBuffer_da[ORIENTATION_DIF_BUFFER_SIZE];
+        double iMeasOriBuffer_da[ORIENTATION_DIF_BUFFER_SIZE];
         double iEstOriBuffer_da[ORIENTATION_DIF_BUFFER_SIZE];
-        double iMesEstOriBufferDif_da[ORIENTATION_DIF_BUFFER_SIZE];
-        double iFiltMesEstOriBufferDif_da[ORIENTATION_DIF_BUFFER_SIZE];
+        double iMeasEstOriBufferDif_da[ORIENTATION_DIF_BUFFER_SIZE];
+        double iFiltMeasEstOriBufferDif_da[ORIENTATION_DIF_BUFFER_SIZE];
         int iPosBufferIndex_s32 = 0;
-        int iMesEstOriBufferDifIndex_s32 = 0;
-        bool iMesEstOriBufferDifValid_b= false;
+        int iMeasEstOriBufferDifIndex_s32 = 0;
+        bool iMeasEstOriBufferDifValid_b= false;
 
         void init();
         void estimate();
@@ -29,12 +29,12 @@ class cOrientationEstimation {
         void filterOri();
     public:
         double iFilteredMeanDifference_d;
-        double iFiltMesOri_d;
+        double iFiltMeasOri_d;
         double iFiltEstOri_d;
         bool iOrientationIsValid_b = false;
         cOrientationEstimation();
         ~cOrientationEstimation();
-        void addPosition(double pMesPosX_d, double pMesPosY_d, double pEstPosX_d, double pEstPosY_d);
+        void addPosition(double pMeasPosX_d, double pMeasPosY_d, double pEstPosX_d, double pEstPosY_d);
 };
 
 #endif

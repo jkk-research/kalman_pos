@@ -36,14 +36,14 @@ double kinEKFwoGNSSYawRateCalculation(sVehicleParameters pVehicleParameters_s, s
 	return lReturnValue_d;
 }
 
-double kinEKFwoGNSSMesBasedLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double kinEKFwoGNSSMeasBasedLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLongitudinalSpeed_d = 0;
 
 	lLongitudinalSpeed_d = pMeasuredValues_s.vehicleSpeed_d;
 	return lLongitudinalSpeed_d;
 }
 
-double kinEKFwoGNSSMesBasedLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double kinEKFwoGNSSMeasBasedLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLateralSpeed_d = 0;
 	double lLongitudinalSpeed_d = 0;
 
@@ -116,16 +116,16 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	double lLateralAcc_d = kinEKFwoGNSSLateralAccCalculation(pVehicleParameters_s, pMeasuredValues_s, lBeta_d, lYawRate_d);
 	double lPositionX_d = kinEKFwoGNSSPositionXCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lPositionY_d = kinEKFwoGNSSPositionYCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
-	double lMesBasedLateralVelocity_d = kinEKFwoGNSSMesBasedLateralVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
-	double lMesBasedLongitudinalVelocity_d = kinEKFwoGNSSMesBasedLongitudinalVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
+	double lMeasBasedLateralVelocity_d = kinEKFwoGNSSMeasBasedLateralVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
+	double lMeasBasedLongitudinalVelocity_d = kinEKFwoGNSSMeasBasedLongitudinalVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
 
-	double lMesYawRate_d = pPrevMeasuredValues_s.yawRate_d;
-	double lMesYawAngle_d = pPrevMeasuredValues_s.yawAngle_d;
-	double lMesLateralAcc_d = pPrevMeasuredValues_s.lateralAcceleration_d;
-	double lMesPositionX_d = pPrevMeasuredValues_s.positionX_d;
-	double lMesPositionY_d = pPrevMeasuredValues_s.positionY_d;
-	double lPevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
-	double lPrevMesLateralAcc_d = pPrevMeasuredValues_s.lateralAcceleration_d;
+	double lMeasYawRate_d = pPrevMeasuredValues_s.yawRate_d;
+	double lMeasYawAngle_d = pPrevMeasuredValues_s.yawAngle_d;
+	double lMeasLateralAcc_d = pPrevMeasuredValues_s.lateralAcceleration_d;
+	double lMeasPositionX_d = pPrevMeasuredValues_s.positionX_d;
+	double lMeasPositionY_d = pPrevMeasuredValues_s.positionY_d;
+	double lPrevMeasVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	double lPrevMeasLateralAcc_d = pPrevMeasuredValues_s.lateralAcceleration_d;
 
 
 	vector<double> lh_v(3);
@@ -141,7 +141,7 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	matrix<double> lM_m(3, 3);
 	matrix<double> lI_m(5, 5);
 
-	lPevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
+	lPrevMeasVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 
 	lh_v(0) = lLongitudinalVelocity_d;
 	lh_v(1) = lLateralVelocity_d;
@@ -153,14 +153,14 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	lxPre_v(3) = lPositionY_d;
 	lxPre_v(4) = lYawAngle_d;
 
-	ly_v(0) = lMesBasedLongitudinalVelocity_d;
-	ly_v(1) = lMesBasedLateralVelocity_d;
-	ly_v(2) = lMesYawRate_d;
-	//ly_v(0) = lMesBasedLongitudinalVelocity_d;
-	//ly_v(1) = lMesBasedLateralVelocity_d;
-	//ly_v(2) = lMesPositionX_d;
-	//ly_v(3) = lMesPositionY_d;
-	//ly_v(4) = lMesYawRate_d;
+	ly_v(0) = lMeasBasedLongitudinalVelocity_d;
+	ly_v(1) = lMeasBasedLateralVelocity_d;
+	ly_v(2) = lMeasYawRate_d;
+	//ly_v(0) = lMeasBasedLongitudinalVelocity_d;
+	//ly_v(1) = lMeasBasedLateralVelocity_d;
+	//ly_v(2) = lMeasPositionX_d;
+	//ly_v(3) = lMeasPositionY_d;
+	//ly_v(4) = lMeasYawRate_d;
 
 	lL_m(0, 0) = 1;
 	lL_m(0, 1) = 0;

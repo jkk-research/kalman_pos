@@ -17,8 +17,8 @@ class cPositionEstimation {
         bool iDynamicTimeCalcEnabled_b = false;
         unsigned long long iPrevMillisecondsSinceEpoch_u64 = 0;
         unsigned long long iMillisecondsSinceEpoch_u64 = 0;
-        double iPrevMesPosX_d = 0;
-        double iPrevMesPosY_d = 0;
+        double iPrevMeasPosX_d = 0;
+        double iPrevMeasPosY_d = 0;
         double iPrevEstPosX_d = 0;
         double iPrevEstPosY_d = 0;
         bool iPrevOrientationIsValid_b = false;
@@ -46,7 +46,7 @@ class cPositionEstimation {
         double getCogDistanceFromBaselinkY(void);
         double getCogDistanceFromBaselinkZ(void);
         double getAccuracyScaleFactor(void);
-        double getFiltMesOri(void);
+        double getFiltMeasOri(void);
         double getTravDistanceOdom(void);
         double getTravDistanceEstPos(void);
 };

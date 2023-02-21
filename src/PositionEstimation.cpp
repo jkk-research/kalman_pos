@@ -18,8 +18,8 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     iPrevMillisecondsSinceEpoch_u64 = 0;
     iMillisecondsSinceEpoch_u64 = 0;
 
-    iPrevMesPosX_d = 0;
-    iPrevMesPosY_d = 0;
+    iPrevMeasPosX_d = 0;
+    iPrevMeasPosY_d = 0;
     iPrevEstPosX_d = 0;
     iPrevEstPosY_d = 0;
 
@@ -171,7 +171,7 @@ void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pE
                     iKinSpeedLimit_d = 200;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMesOri_d);
+                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::model;
                     iGNSSState_e = eGNSSState::off;
@@ -188,7 +188,7 @@ void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pE
                     iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMesOri_d);
+                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::model;
                     iGNSSState_e = eGNSSState::off;
@@ -217,7 +217,7 @@ void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pE
                     iKinSpeedLimit_d = 200;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMesOri_d);
+                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                     iGNSSState_e = eGNSSState::off;
@@ -234,7 +234,7 @@ void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pE
                     iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMesOri_d);
+                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                     iGNSSState_e = eGNSSState::off;
@@ -251,7 +251,7 @@ void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pE
                     iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMesOri_d);
+                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                     iGNSSState_e = eGNSSState::SBAS;
@@ -271,7 +271,7 @@ void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pE
                                 iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                             } else {
                                 if (!iPrevOrientationIsValid_b) {
-                                    iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMesOri_d);
+                                    iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                                 }
                             iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                             iGNSSState_e = eGNSSState::off;
@@ -391,8 +391,8 @@ void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEsti
                                                 0);
         iFirstIteration_b = false;
 
-        iPrevMesPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
-        iPrevMesPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
+        iPrevMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
+        iPrevMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
         iPrevEstPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
         iPrevEstPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
     }
@@ -409,8 +409,8 @@ void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEsti
     iCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_st);
 
     if ( (iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d > 0.1) &&
-            (iPrevMesPosX_d != iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d) &&
-            (iPrevMesPosY_d != iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d) &&
+            (iPrevMeasPosX_d != iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d) &&
+            (iPrevMeasPosY_d != iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d) &&
             (iPrevEstPosX_d != lCurrentModelStates_st.positionX_d) &&
             (iPrevEstPosY_d != lCurrentModelStates_st.positionY_d)) {
 
@@ -420,8 +420,8 @@ void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEsti
                                                 lCurrentModelStates_st.positionY_d);
     }
 
-    iPrevMesPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
-    iPrevMesPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
+    iPrevMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
+    iPrevMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
     iPrevEstPosX_d = lCurrentModelStates_st.positionX_d;
     iPrevEstPosY_d = lCurrentModelStates_st.positionY_d;        
 }
@@ -446,8 +446,8 @@ double cPositionEstimation::getAccuracyScaleFactor(void) {
     return iAccuracyScaleFactor_d;
 }
 
-double cPositionEstimation::getFiltMesOri(void) {
-    return iOrientationEstimation_cl.iFiltMesOri_d;
+double cPositionEstimation::getFiltMeasOri(void) {
+    return iOrientationEstimation_cl.iFiltMeasOri_d;
 }
 
 double cPositionEstimation::getTravDistanceOdom(void) {
