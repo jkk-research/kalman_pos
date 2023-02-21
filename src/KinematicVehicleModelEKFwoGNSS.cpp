@@ -3,6 +3,7 @@
 
 #include <math.h>
 
+// v_x(k) = a_x^M(k-1) T_S + v_x(k-1)
 double kinEKFwoGNSSLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
@@ -11,6 +12,7 @@ double kinEKFwoGNSSLongitudinalVelocityCalculation(sVehicleParameters pVehiclePa
 	return lReturnValue_d;
 }
 
+// v_y(k) = a_y^M(k-1) T_S + v_y(k-1)
 double kinEKFwoGNSSLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
@@ -19,6 +21,7 @@ double kinEKFwoGNSSLateralVelocityCalculation(sVehicleParameters pVehicleParamet
 	return lReturnValue_d;
 }
 
+// beta(k-1) = arctg(l_2 / (l_1 + l_2) tg(delta(k-1)))
 double kinEKFwoGNSSBetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates pModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
@@ -28,6 +31,8 @@ double kinEKFwoGNSSBetaCalculation(sVehicleParameters pVehicleParameters_s, sMea
 	return lReturnValue_d;
 }
 
+// v(k-1) = v_x(k-1)/cos(beta(k-1))
+// dpsi/dt(k-1) = v_x(k) / l_2 * tg(beta(k-1))
 double kinEKFwoGNSSYawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, double pLongitudinalVelocity_d, double pBeta_d) {
 	double lReturnValue_d = 0;
 
@@ -36,6 +41,7 @@ double kinEKFwoGNSSYawRateCalculation(sVehicleParameters pVehicleParameters_s, s
 	return lReturnValue_d;
 }
 
+// v_x^M
 double kinEKFwoGNSSMesBasedLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLongitudinalSpeed_d = 0;
 
@@ -43,6 +49,7 @@ double kinEKFwoGNSSMesBasedLongitudinalVelocityCalculation(sVehicleParameters pV
 	return lLongitudinalSpeed_d;
 }
 
+// v_y^M
 double kinEKFwoGNSSMesBasedLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLateralSpeed_d = 0;
 	double lLongitudinalSpeed_d = 0;
@@ -52,10 +59,12 @@ double kinEKFwoGNSSMesBasedLateralVelocityCalculation(sVehicleParameters pVehicl
 	return lLateralSpeed_d;
 }
 
+// a_y^M
 double kinEKFwoGNSSLateralAccCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pBeta_d, double pYawRate_d) {
 	return pMeasuredValues_s.lateralAcceleration_d;
 }
 
+// psi(k) = dpsi/dt(k-1) T_S + psi(k-1)
 double kinEKFwoGNSSYawAngleCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
@@ -64,6 +73,7 @@ double kinEKFwoGNSSYawAngleCalculation(sVehicleParameters pVehicleParameters_s, 
 	return lReturnValue_d;
 }
 
+// x(k) = x(k-1) + v_x(k-1) T_S cos(psi(k-1)) - v_y(k-1) T_S sin(psi(k-1))
 double kinEKFwoGNSSPositionXCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevLongitudinalSpeed_d = 0;
@@ -84,6 +94,7 @@ double kinEKFwoGNSSPositionXCalculation(sVehicleParameters pVehicleParameters_s,
 	return lReturnValue_d;
 }
 
+// y(k) = y(k-1) + v_x(k-1) T_S sin(psi(k-1)) + v_y(k-1) T_S cos(psi(k-1))
 double kinEKFwoGNSSPositionYCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevLongitudinalSpeed_d = 0;
@@ -104,6 +115,7 @@ double kinEKFwoGNSSPositionYCalculation(sVehicleParameters pVehicleParameters_s,
 	return lReturnValue_d;
 }
 
+// EKF GNSS nélkül
 void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, matrix<double>& pPrevP_m, matrix<double>& pQ_m, matrix<double>& pR_m) {
 	double lYawAngle_d = kinEKFwoGNSSYawAngleCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lPrevYawAngle_d = pPrevModelStates_s.yawAngle_d;
@@ -143,25 +155,30 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 
 	lPevMesVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
 
+	// h = [v_x; v_y; dpsi/dt]
 	lh_v(0) = lLongitudinalVelocity_d;
 	lh_v(1) = lLateralVelocity_d;
 	lh_v(2) = lYawRate_d;
-
+	
+	// x_k^- = [v_x(k); v_y(k); x(k); y(k); psi(k)]
 	lxPre_v(0) = lLongitudinalVelocity_d;
 	lxPre_v(1) = lLateralVelocity_d;
 	lxPre_v(2) = lPositionX_d;
 	lxPre_v(3) = lPositionY_d;
 	lxPre_v(4) = lYawAngle_d;
 
-ly_v(0) = lMesBasedLongitudinalVelocity_d;
-ly_v(1) = lMesBasedLateralVelocity_d;
-ly_v(2) = lMesYawRate_d;
+	// y(k) = [v_x^ROS(k); v_y^ROS(k); dpsi/dt(k)]
+	// v_x ~ gROSVehicleStatusMsg_msg.speed
+	ly_v(0) = lMesBasedLongitudinalVelocity_d;
+	ly_v(1) = lMesBasedLateralVelocity_d;
+	ly_v(2) = lMesYawRate_d;
 	//ly_v(0) = lMesBasedLongitudinalVelocity_d;
 	//ly_v(1) = lMesBasedLateralVelocity_d;
 	//ly_v(2) = lMesPositionX_d;
 	//ly_v(3) = lMesPositionY_d;
 	//ly_v(4) = lMesYawRate_d;
-
+	
+	// L = I_5
 	lL_m(0, 0) = 1;
 	lL_m(0, 1) = 0;
 	lL_m(0, 2) = 0;
@@ -191,7 +208,8 @@ ly_v(2) = lMesYawRate_d;
 	lL_m(4, 2) = 0;
 	lL_m(4, 3) = 0;
 	lL_m(4, 4) = 1;
-
+	
+	// M = I_3
 	lM_m(0, 0) = 1;
 	lM_m(0, 1) = 0;
 	lM_m(0, 2) = 0;
@@ -203,7 +221,8 @@ ly_v(2) = lMesYawRate_d;
 	lM_m(2, 0) = 0;
 	lM_m(2, 1) = 0;
 	lM_m(2, 2) = 1;
-
+	
+	// I_5
 	lI_m(0, 0) = 1;
 	lI_m(0, 1) = 0;
 	lI_m(0, 2) = 0;
@@ -233,7 +252,14 @@ ly_v(2) = lMesYawRate_d;
 	lI_m(4, 2) = 0;
 	lI_m(4, 3) = 0;
 	lI_m(4, 4) = 1;
-
+	
+	// F_k = [
+	// 	1, 0, 0, 0, 0;
+	// 	0, 1, 0, 0, 0;
+	// 	T_S cos(psi(k-1)), 0, 1, 0, -T_S v_x(k-1) sin(psi(k-1));
+	// 	0, T_S sin(psi(k-1)), 0, 1, T_S v_y(k-1) cos(psi(k-1));
+	// 	0, 0, 0, 0, 1
+	// ]
 	lF_m(0, 0) = 1;
 	lF_m(0, 1) = 0;
 	lF_m(0, 2) = 0;
@@ -264,6 +290,13 @@ ly_v(2) = lMesYawRate_d;
 	lF_m(4, 3) = 0;
 	lF_m(4, 4) = 1;
 
+	// H_k =  dh/dx = [
+	// 	1, 0, 0, 0, 0;
+	// 	0, 1, 0, 0, 0;
+	// 	d/dv_x(dpsi/dt), 0, 0, 0, 0;
+	//]
+	// x = [v_x; v_y; x; y; psi]
+	// y = [v_x^GPS(k); v_y^GPS(k); dpsi/dt(k)]
 	lH_m(0, 0) = 1;
 	lH_m(0, 1) = 0;
 	lH_m(0, 2) = 0;
@@ -277,6 +310,10 @@ ly_v(2) = lMesYawRate_d;
 	lH_m(1, 4) = 0;
 
 	// TODO: tan or sin (it have to be checked)?
+	// dpsi/dt = 
+	//		v/l_2 sin(beta) = 
+	//		v_x/cos(beta)/l_2 sin(beta) = 
+	//		v_x tg(beta)/l_2
 	lH_m(2, 0) = pVehicleParameters_s.l2_d * tan(lBeta_d);
 	lH_m(2, 1) = 0;
 	lH_m(2, 2) = 0;
