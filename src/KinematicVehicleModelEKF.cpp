@@ -357,7 +357,7 @@ void kinEKFEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sV
 	//		v/l_2 sin(beta) = 
 	//		v_x/cos(beta)/l_2 sin(beta) = 
 	//		v_x tg(beta)/l_2
-	lH_m(4, 0) = pVehicleParameters_s.l2_d * tan(lBeta_d);
+	lH_m(4, 0) = tan(lBeta_d) / pVehicleParameters_s.l2_d;
 	lH_m(4, 1) = 0;
 	lH_m(4, 2) = 0;
 	lH_m(4, 3) = 0;

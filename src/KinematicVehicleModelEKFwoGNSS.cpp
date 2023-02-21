@@ -115,7 +115,7 @@ double kinEKFwoGNSSPositionYCalculation(sVehicleParameters pVehicleParameters_s,
 	return lReturnValue_d;
 }
 
-// EKF GNSS nélkül
+// EKF GNSS nï¿½lkï¿½l
 void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP_m, sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, matrix<double>& pPrevP_m, matrix<double>& pQ_m, matrix<double>& pR_m) {
 	double lYawAngle_d = kinEKFwoGNSSYawAngleCalculation(pVehicleParameters_s, pPrevMeasuredValues_s, pPrevModelStates_s, pTs_d);
 	double lPrevYawAngle_d = pPrevModelStates_s.yawAngle_d;
@@ -314,7 +314,7 @@ void kinEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 	//		v/l_2 sin(beta) = 
 	//		v_x/cos(beta)/l_2 sin(beta) = 
 	//		v_x tg(beta)/l_2
-	lH_m(2, 0) = pVehicleParameters_s.l2_d * tan(lBeta_d);
+	lH_m(2, 0) = tan(lBeta_d) / pVehicleParameters_s.l2_d;
 	lH_m(2, 1) = 0;
 	lH_m(2, 2) = 0;
 	lH_m(2, 3) = 0;
