@@ -3,6 +3,7 @@
 
 #include <math.h>
 
+// v_x^M
 double dynLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLongitudinalSpeed_d = 0;
 
@@ -10,6 +11,7 @@ double dynLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_
 	return lLongitudinalSpeed_d;
 }
 
+// v_y^M
 double dynLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLateralSpeed_d = 0;
 	double lLongitudinalSpeed_d = 0;
@@ -19,12 +21,17 @@ double dynLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sM
 	return lLateralSpeed_d;
 }
 
+// beta(k) = 
+//		delta(k-1) T_S c_1/(m v) + 
+//		(1 - T_S ((c_1 + c_2)/(m v))) beta(k-1) + 
+//		(((c_2 l_2 - c_1 l_1)/(m v^2)) - 1) T_S dpsi/dt(k-1)
 double dynBetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevVehicleSpeed_d = 0;
 	
 	if (cos(pPrevModelStates_s.beta_d) != 0) {
-		lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d / cos(pPrevModelStates_s.beta_d); // vx / cos(beta)
+		// v(k-1) = v_x(k-1) / cos(beta(k-1))
+		lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d / cos(pPrevModelStates_s.beta_d);
 	}
 	
 	//lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
@@ -48,12 +55,17 @@ double dynBetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValu
 	return lReturnValue_d;	
 }
 
+// dpsi/dt(k) = 
+//		beta(k-1) T_S (c_2 l_2 - c_1 l_1)/J_zz + 
+//		dpsi/dt(k-1) (1 - T_S (c_2 l_2^2 + c_1 l_1^2)/(v(k-1) J_zz)) + 
+//		delta(k-1) T_S c_1 l_1/J_zz;
 double dynYawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevVehicleSpeed_d = 0;
 	
 	if (cos(pPrevModelStates_s.beta_d) != 0) {
-		lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d / cos(pPrevModelStates_s.beta_d); // vx / cos(beta)
+		// v(k-1) = v_x^M(k-1) / cos(beta(k-1))
+		lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d / cos(pPrevModelStates_s.beta_d);
 	}
 	
 	//lPrevVehicleSpeed_d = pPrevMeasuredValues_s.vehicleSpeed_d;
@@ -74,16 +86,19 @@ double dynYawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredV
 	return lReturnValue_d;
 }
 
+// a_y(k) = 
+//		-beta(k) (c_1 + c_2)/m + 
+//		dpsi/dt(k) (c_2 l_2 - c_1 l_1)/(m v(k)) + 
+//		delta(k) c_1/m
 double dynLateralAccCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pBeta_d, double pYawRate_d) {
 	double lVehicleSpeed_d = 0;
 	double lReturnValue_d = 0;
-
 	
 	if (cos(pBeta_d) != 0) {
-		lVehicleSpeed_d = pMeasuredValues_s.vehicleSpeed_d / cos(pBeta_d); // vx / cos(beta)
+		// v(k) = v_x^M(k) / cos(beta(k))
+		lVehicleSpeed_d = pMeasuredValues_s.vehicleSpeed_d / cos(pBeta_d);
 	}
 	
-
 	//lVehicleSpeed_d = pMeasuredValues_s.vehicleSpeed_d;
 
 	if (lVehicleSpeed_d != 0) {
@@ -102,6 +117,7 @@ double dynLateralAccCalculation(sVehicleParameters pVehicleParameters_s, sMeasur
 	return lReturnValue_d;
 }
 
+// psi(k) = dpsi/dt(k-1) T_S + psi(k-1)
 double dynYawAngleCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
@@ -110,6 +126,7 @@ double dynYawAngleCalculation(sVehicleParameters pVehicleParameters_s, sMeasured
 	return lReturnValue_d;
 }
 
+// x(k) = x(k-1) + v(k-1) T_S cos(psi(k-1)) - a_y(k-1) T_S^2/2 sin(psi(k-1))
 double dynPositionXCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
@@ -125,6 +142,7 @@ double dynPositionXCalculation(sVehicleParameters pVehicleParameters_s, sMeasure
 	return lReturnValue_d;
 }
 
+// y(k) = y(k-1) + v(k-1) T_S sin(psi(k-1)) + a_y(k-1) T_S^2/2 cos(psi(k-1))
 double dynPositionYCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
