@@ -269,7 +269,7 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 
 		lF_m(1, 0) = pTs_d * (-pVehicleParameters_s.c1_d * pVehicleParameters_s.l1_d + pVehicleParameters_s.c2_d * pVehicleParameters_s.l2_d) / pVehicleParameters_s.jz_d;
 		// TODO: Verify l1^2 and l2^2 is correct
-		lF_m(1, 1) = pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lPrevMesVehicleSpeed_d * pVehicleParameters_s.jz_d);
+		lF_m(1, 1) = (1 - (pTs_d * (pVehicleParameters_s.c2_d * (pVehicleParameters_s.l2_d * pVehicleParameters_s.l2_d) + pVehicleParameters_s.c1_d * (pVehicleParameters_s.l1_d * pVehicleParameters_s.l1_d)) / (lPrevMesVehicleSpeed_d * pVehicleParameters_s.jz_d)));
 		lF_m(1, 2) = 0;
 		lF_m(1, 3) = 0;
 		lF_m(1, 4) = 0;
