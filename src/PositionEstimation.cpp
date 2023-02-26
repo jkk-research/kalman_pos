@@ -2,15 +2,15 @@
 
 #include "tf/transform_datatypes.h"
 
-cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, float pKinematicModelMaxSpeed_f) {
-    initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleType_s, pKinematicModelMaxSpeed_f );
+cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f) {
+    initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleType_s, pVehicleParameters_s, pKinematicModelMaxSpeed_f );
 }
 
 cPositionEstimation::~cPositionEstimation() {
 
 }
 
-void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, float pKinematicModelMaxSpeed_f ) {
+void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f ) {
     iFirstIteration_b = true;
     iLoopRateHz_i32 = pLoopRateHz_i32;
     iTs_d = 1 / iLoopRateHz_i32;
@@ -28,8 +28,17 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     iTravDistanceOdom_d = 0;
     iTravDistanceEstPos_d = 0;
 
-    iCombinedVehicleModel_cl = cCombinedVehicleModel("SZEmission");
-    iCombinedVehicleModel_cl.initVehicleParameters(pVehicleType_s);
+    sVehicleParameters lVehicleParameters_s;
+    lVehicleParameters_s.c1_d   = 3000;//4000;
+    lVehicleParameters_s.c2_d   = 800;//2400; // The ratio is very important!!!!!
+    lVehicleParameters_s.m_d    = 180;
+    lVehicleParameters_s.jz_d   = 270;
+    lVehicleParameters_s.l1_d   = 1.3 - 0.976;
+    lVehicleParameters_s.l2_d   = 0.976;
+    lVehicleParameters_s.swr_d  = 1;
+
+    iCombinedVehicleModel_cl = cCombinedVehicleModel("SZEmission", lVehicleParameters_s);
+    iCombinedVehicleModel_cl.initVehicleParameters(pVehicleType_s, pVehicleParameters_s);
     iCombinedVehicleModel_cl.initEKFMatrices();
 
     iKinSpeedLimit_d = pKinematicModelMaxSpeed_f;

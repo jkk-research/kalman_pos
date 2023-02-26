@@ -50,11 +50,11 @@ public:
 public:
     // Public functions
     cCombinedVehicleModel();
-    cCombinedVehicleModel(std::string pVehicleType_s);
+    cCombinedVehicleModel( std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s);
     ~cCombinedVehicleModel();
     void initEKFMatrices(void);
     void setPrevEKFMatrices(void);
-    void initVehicleParameters(std::string pVehicleType_s);
+    void initVehicleParameters(  std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s);
     void setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d);
     void setMeasuredValuesGNSS(double pPositionX_d, double pPositionY_d, double pPositionZ_d, double pYawAngle_d);
     void setMeasuredValuesIMU(double pLongitudinalAcceleration_d, double pLateralAcceleration_d, double pVerticalAcceleration_d, double pRollRate_d, double pPitchRate_d, double pYawRate_d);

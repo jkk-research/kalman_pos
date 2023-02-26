@@ -119,13 +119,41 @@ roslaunch kalman_pos kalman_pos01.launch
   - default value: true
   - description: true if the time difference is calculated between each step, false if fix value is used (1/lROSLoopRate_cl_hz)
 - kinematic_model_max_speed 
-  - type: float 
+  - type: double 
   - default value: 0.3
   - description: the speed where the algorithm switch to the dynamic model from the kinematic model
 - do_not_wait_for_gnss_msgs 
   - type: bool 
   - default value: true
   - description: true if the algrithm in not waiting for the first positon message (use this for the algorithms without GNSS position and orientation estimation)
+- vehicle_param_c1
+  - type: double 
+  - default value: 3000
+  - description: front wheel cornering stiffness (for single track model) [N/rad]
+- vehicle_param_c2
+  - type: double 
+  - default value: 3000
+  - description: rear wheel cornering stiffness (for single track model) [N/rad]
+- vehicle_param_m
+  - type: double 
+  - default value: 180
+  - description: mass of the vehicle [kg]
+- vehicle_param_jz
+  - type: double 
+  - default value: 270
+  - description: moment of inertia (z axle) [kg*m2]
+- vehicle_param_l1
+  - type: double 
+  - default value: 0.324
+  - description: CoG distance from the front axle [m]
+- vehicle_param_l1
+  - type: double 
+  - default value: 0.976
+  - description: CoG distance from the rear axle [m]
+- vehicle_param_swr
+  - type: double 
+  - default value: 1
+  - description: Steering wheel ratio
 
 ## Rosbag
 

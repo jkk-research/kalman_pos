@@ -92,8 +92,15 @@ int main(int argc, char **argv)
     bool lROSParamDoNotWaitForGnssMsgs_b;
     int lROSParamLoopRateHz_i32;
     int lROSParamEstimationMethod_i32;
-    float lROSParamKinematicModelMaxSpeed_f;
-    
+    double lROSParamKinematicModelMaxSpeed_d;
+    double lROSParamVehicleParamC1_d;
+    double lROSParamVehicleParamC2_d;
+    double lROSParamVehicleParamM_d;
+    double lROSParamVehicleParamJz_d;
+    double lROSParamVehicleParamL1_d;
+    double lROSParamVehicleParamL2_d;
+    double lROSParamVehicleParamSWR_d;
+
     // Initialize ROS node
     ros::init(argc, argv, "kalman_pos_node");
     ros::NodeHandle lROSNodeHandle_cl;
@@ -115,7 +122,14 @@ int main(int argc, char **argv)
     lROSNodeHandlePrivate_cl.param<std::string>("gnss_source", lROSParamGnssSource_s, "nova");
     lROSNodeHandlePrivate_cl.param<bool>("dynamic_time_calc", lROSParamDynamicTimeCalcEnabled_b, false);
     lROSNodeHandlePrivate_cl.param<bool>("do_not_wait_for_gnss_msgs", lROSParamDoNotWaitForGnssMsgs_b, false);
-    lROSNodeHandlePrivate_cl.param<float>("kinematic_model_max_speed", lROSParamKinematicModelMaxSpeed_f, 0.5);
+    lROSNodeHandlePrivate_cl.param<double>("kinematic_model_max_speed", lROSParamKinematicModelMaxSpeed_d, 0.5);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c1", lROSParamVehicleParamC1_d, 3000);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c2", lROSParamVehicleParamC2_d, 800);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_m", lROSParamVehicleParamM_d, 180);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_jz", lROSParamVehicleParamJz_d, 270);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_l1", lROSParamVehicleParamL1_d, 0.324);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_l2", lROSParamVehicleParamL2_d, 0.976);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_swr", lROSParamVehicleParamSWR_d, 1);
 
     ROS_INFO_STREAM("kalman_pos_node started | pose: " << lROSParamPoseTopic_s
                     << " | vehicle_status: " << lROSParamVehicleStatusTopic_s 
@@ -129,7 +143,14 @@ int main(int argc, char **argv)
                     << " | lROSLoopRate_cl_hz: " << lROSParamLoopRateHz_i32
                     << " | estimation_method: " << lROSParamEstimationMethod_i32
                     << " | gnss_source: " << lROSParamGnssSource_s 
-                    << " | dynamic_time_calc_enabled: " << lROSParamDynamicTimeCalcEnabled_b );
+                    << " | dynamic_time_calc_enabled: " << lROSParamDynamicTimeCalcEnabled_b
+                    << " | vehicle_param_c1: " <<  lROSParamVehicleParamC1_d
+                    << " | vehicle_param_c2: " <<  lROSParamVehicleParamC2_d
+                    << " | vehicle_param_m: " <<  lROSParamVehicleParamM_d
+                    << " | vehicle_param_jz: " <<  lROSParamVehicleParamJz_d
+                    << " | vehicle_param_l1: " <<  lROSParamVehicleParamL1_d
+                    << " | vehicle_param_l2: " <<  lROSParamVehicleParamL2_d
+                    << " | vehicle_param_swr: " <<  lROSParamVehicleParamSWR_d);
     
     ros::Publisher lROSPubAccuracyMarker_cl = lROSNodeHandle_cl.advertise<visualization_msgs::Marker>( lROSParamEstimationAccuracyTopic_s, 1000 );
     ros::Publisher lROSPubEstimatedPoseCog_cl = lROSNodeHandle_cl.advertise<geometry_msgs::PoseStamped>(lROSParamEstimatedPoseCogTopic_s, 1000);
@@ -146,9 +167,9 @@ int main(int argc, char **argv)
     if (lROSParamGnssSource_s == "nova") {
         ros::Subscriber lROSSubInspvax_cl = lROSNodeHandle_cl.subscribe(lROSParamInspvaxTopic_s, 1000, novatelStatusCallback);
     }
-    if ((lROSParamGnssSource_s == "duro") || (lROSParamVehicleType_s == "SZEmission")) {
+    //if ((lROSParamGnssSource_s == "duro") || (lROSParamVehicleType_s == "SZEmission")) {
         ros::Subscriber lROSSubDuroStatus_cl = lROSNodeHandle_cl.subscribe(lROSParamDuroStatusStringTopic_s, 1000, duroStatusStringCallback);
-    }
+    //}
     
     ros::Rate lROSLoopRate_cl(lROSParamLoopRateHz_i32); // 10 Hz
     
@@ -161,9 +182,19 @@ int main(int argc, char **argv)
     gNovatelStatusMsgArrived_b = false;
     gDuroStatusMsgArrived_b = false;
 
+    sVehicleParameters lVehicleParameters_s;
+    lVehicleParameters_s.c1_d   = lROSParamVehicleParamC1_f;
+    lVehicleParameters_s.c2_d   = lROSParamVehicleParamC2_f;
+    lVehicleParameters_s.m_d    = lROSParamVehicleParamM_f;
+    lVehicleParameters_s.jz_d   = lROSParamVehicleParamJz_f;
+    lVehicleParameters_s.l1_d   = lROSParamVehicleParamL1_f;
+    lVehicleParameters_s.l2_d   = lROSParamVehicleParamL2_f;
+    lVehicleParameters_s.swr_d  = lROSParamVehicleParamSWR_f;
+
     cPositionEstimation lPositionEstimation_cl( lROSParamDynamicTimeCalcEnabled_b,
                                                 lROSParamLoopRateHz_i32,
                                                 lROSParamVehicleType_s, 
+                                                lVehicleParameters_s,
                                                 lROSParamKinematicModelMaxSpeed_f);
 
     ROS_INFO_STREAM("ROS::OK  " << ros::ok());
@@ -192,7 +223,7 @@ int main(int argc, char **argv)
 
             lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
 
-            if ((lROSParamPoseTopic_s == "gps/duro/current_pose") && (lROSParamVehicleType_s == "SZEmission")) {
+            if ((lROSParamPoseTopic_s == "gps/duro/current_pose") && (lROSParamVehicleType_s == "SZEmission") && (lPositionEstimation_cl.getFiltMeasOri() != INVALID_ORIENTATION)) {
                 lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lPositionEstimation_cl.getFiltMeasOri());
             } else {
                 lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
@@ -241,7 +272,7 @@ int main(int argc, char **argv)
         tf2_ros::Buffer lBuffer_cl;
 
         lROSEstPoseBaselink_msg.header.frame_id = "base_link";
-        lROSEstPoseBaselink_msg.header.stamp = ros::Time::now();
+        //lROSEstPoseBaselink_msg.header.stamp = ros::Time::now();
         lROSEstPoseBaselink_msg.pose.position.x = -lPositionEstimation_cl.getCogDistanceFromBaselinkX();
         lROSEstPoseBaselink_msg.pose.position.y =  lPositionEstimation_cl.getCogDistanceFromBaselinkY();
         lROSEstPoseBaselink_msg.pose.position.z =  lPositionEstimation_cl.getCogDistanceFromBaselinkZ();
