@@ -464,7 +464,7 @@ void cCombinedVehicleModel::iterateModel(double pTs_d, eEstimationMode pEstimati
     double lYawRate_d             = 0;
     double lLateralSpeed_d        = 0;
     double lLongitudinalSpeed_d   = 0;
-    
+
     if (iPrevMeasuredValues_s.vehicleSpeed_d < pKinSpeedLimit_d) {
         if ((pEstimationMode_e == eEstimationMode::model)) {
             // Kinematic model

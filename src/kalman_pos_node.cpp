@@ -210,18 +210,20 @@ int main(int argc, char **argv)
 
         if ((gPoseMsgArrived_b || lROSParamDoNotWaitForGnssMsgs_b) && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
             sModelStates lCurrentModelStates_st;
-            double lTmpRoll_d;
-            double lTmpPitch_d;
-            double lTmpYaw_d;
+            double lTmpRoll_d = 0;
+            double lTmpPitch_d = 0;
+            double lTmpYaw_d = 0;
 
-            tf::Quaternion lTmpQuternion_c(
-                gROSCogPositionMsg_msg.pose.orientation.x,
-                gROSCogPositionMsg_msg.pose.orientation.y,
-                gROSCogPositionMsg_msg.pose.orientation.z,
-                gROSCogPositionMsg_msg.pose.orientation.w);
-            tf::Matrix3x3 lTmpMatrix(lTmpQuternion_c);
+            if ( (gROSCogPositionMsg_msg.pose.orientation.x != 0) || (gROSCogPositionMsg_msg.pose.orientation.y != 0) || (gROSCogPositionMsg_msg.pose.orientation.z != 0) || (gROSCogPositionMsg_msg.pose.orientation.w != 0) ) {
+                tf::Quaternion lTmpQuternion_c(
+                    gROSCogPositionMsg_msg.pose.orientation.x,
+                    gROSCogPositionMsg_msg.pose.orientation.y,
+                    gROSCogPositionMsg_msg.pose.orientation.z,
+                    gROSCogPositionMsg_msg.pose.orientation.w);
+                tf::Matrix3x3 lTmpMatrix(lTmpQuternion_c);
 
-            lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
+                lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
+            }
 
             if ((lROSParamPoseTopic_s == "gps/duro/current_pose") && (lROSParamVehicleType_s == "SZEmission") && (lPositionEstimation_cl.getFiltMeasOri() != INVALID_ORIENTATION)) {
                 lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lPositionEstimation_cl.getFiltMeasOri());
@@ -229,11 +231,11 @@ int main(int argc, char **argv)
                 lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
             if ((lROSParamImuTopic_s == "gps/duro/imu") || (lROSParamImuTopic_s == "/imu/data")) {
-                lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x, gROSIMUMsg_msg.linear_acceleration.y, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, -1*gROSIMUMsg_msg.angular_velocity.z);
+                lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x+0.3, gROSIMUMsg_msg.linear_acceleration.y+3.2, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, -1*gROSIMUMsg_msg.angular_velocity.z);
             } else {
-                lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x, gROSIMUMsg_msg.linear_acceleration.y, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, gROSIMUMsg_msg.angular_velocity.z);    
+                lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x+0.3, gROSIMUMsg_msg.linear_acceleration.y+3.2, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, gROSIMUMsg_msg.angular_velocity.z);    
             }
-            lPositionEstimation_cl.setMeasuredValuesVehicleState(gROSVehicleStatusMsg_msg.angle*1, gROSVehicleStatusMsg_msg.speed*1);
+            lPositionEstimation_cl.setMeasuredValuesVehicleState(gROSVehicleStatusMsg_msg.angle*1, gROSVehicleStatusMsg_msg.speed*0.96);
    
             lPositionEstimation_cl.iterateEstimation(lROSParamGnssSource_s,
                                                      lROSParamEstimationMethod_i32,
@@ -269,6 +271,7 @@ int main(int argc, char **argv)
         lROSPubEstimatedTraveledDistanceOdom_cl.publish(lROSEstTravDistOdom_msg);
         lROSPubEstimatedTraveledDistanceEstPos_cl.publish(lROSEstTravDistEstPos_msg);
         
+        /*
         tf2_ros::Buffer lBuffer_cl;
 
         lROSEstPoseBaselink_msg.header.frame_id = "base_link";
@@ -313,7 +316,7 @@ int main(int argc, char **argv)
         transformStamped.transform.rotation.w = lROSEstPoseBaselink_msg.pose.orientation.w;
 
         br.sendTransform(transformStamped);
-
+*/
         lROSEstAccuracyMarker_msg.header.frame_id = "base_link";
         lROSEstAccuracyMarker_msg.header.stamp = ros::Time();
         lROSEstAccuracyMarker_msg.ns = lROSParamEstimatedPoseBaselinkTopic_s;
