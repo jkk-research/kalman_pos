@@ -22,8 +22,8 @@
         <param name="vehicle_param_c2" type="double" value="3000" />      <!--rear wheel cornering stiffness (for single track model) [N/rad]-->
         <param name="vehicle_param_m" type="double" value="180" />       <!--mass of the vehicle [kg]-->
         <param name="vehicle_param_jz" type="double" value="270" />      <!--moment of inertia (z axle) [kg*m2]-->
-        <param name="vehicle_param_l1" type="double" value="0.324" />    <!--CoG distance from the front axle [m]-->
-        <param name="vehicle_param_l2" type="double" value="0.976" />    <!--CoG distance from the rear axle [m]-->
+        <param name="vehicle_param_l1" type="double" value="0.624" />    <!--CoG distance from the front axle [m]-->
+        <param name="vehicle_param_l2" type="double" value="0.676" />    <!--CoG distance from the rear axle [m]-->
         <param name="vehicle_param_swr" type="double" value="1" />       <!--Steering wheel ratio -->
     </node>
 </launch>
