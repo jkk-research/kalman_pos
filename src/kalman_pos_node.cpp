@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     lROSNodeHandlePrivate_cl.param<bool>("do_not_wait_for_gnss_msgs", lROSParamDoNotWaitForGnssMsgs_b, false);
     lROSNodeHandlePrivate_cl.param<double>("kinematic_model_max_speed", lROSParamKinematicModelMaxSpeed_d, 0.5);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c1", lROSParamVehicleParamC1_d, 3000);
-    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c2", lROSParamVehicleParamC2_d, 800);
+    lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c2", lROSParamVehicleParamC2_d, 3000);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_m", lROSParamVehicleParamM_d, 180);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_jz", lROSParamVehicleParamJz_d, 270);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_l1", lROSParamVehicleParamL1_d, 0.324);
@@ -183,19 +183,19 @@ int main(int argc, char **argv)
     gDuroStatusMsgArrived_b = false;
 
     sVehicleParameters lVehicleParameters_s;
-    lVehicleParameters_s.c1_d   = lROSParamVehicleParamC1_f;
-    lVehicleParameters_s.c2_d   = lROSParamVehicleParamC2_f;
-    lVehicleParameters_s.m_d    = lROSParamVehicleParamM_f;
-    lVehicleParameters_s.jz_d   = lROSParamVehicleParamJz_f;
-    lVehicleParameters_s.l1_d   = lROSParamVehicleParamL1_f;
-    lVehicleParameters_s.l2_d   = lROSParamVehicleParamL2_f;
-    lVehicleParameters_s.swr_d  = lROSParamVehicleParamSWR_f;
+    lVehicleParameters_s.c1_d   = lROSParamVehicleParamC1_d;
+    lVehicleParameters_s.c2_d   = lROSParamVehicleParamC2_d;
+    lVehicleParameters_s.m_d    = lROSParamVehicleParamM_d;
+    lVehicleParameters_s.jz_d   = lROSParamVehicleParamJz_d;
+    lVehicleParameters_s.l1_d   = lROSParamVehicleParamL1_d;
+    lVehicleParameters_s.l2_d   = lROSParamVehicleParamL2_d;
+    lVehicleParameters_s.swr_d  = lROSParamVehicleParamSWR_d;
 
     cPositionEstimation lPositionEstimation_cl( lROSParamDynamicTimeCalcEnabled_b,
                                                 lROSParamLoopRateHz_i32,
                                                 lROSParamVehicleType_s, 
                                                 lVehicleParameters_s,
-                                                lROSParamKinematicModelMaxSpeed_f);
+                                                lROSParamKinematicModelMaxSpeed_d);
 
     ROS_INFO_STREAM("ROS::OK  " << ros::ok());
 
