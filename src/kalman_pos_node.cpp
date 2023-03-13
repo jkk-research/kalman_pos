@@ -34,6 +34,8 @@ bool gIMUMsgArrived_b = false;
 bool gVehicleStatusMsgArrived_b = false;
 bool gNovatelStatusMsgArrived_b = false;
 bool gDuroStatusMsgArrived_b = false;
+unsigned long long gIMUMsgArriveTime_u64 = 0;
+unsigned long long gVehicleStatusMsgArriveTime_u64 = 0;
 
 void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
@@ -50,14 +52,24 @@ void navSatFixCallback(const sensor_msgs::NavSatFix::ConstPtr& pMsg_msgp)
 
 void imuCallback(const sensor_msgs::Imu::ConstPtr& pMsg_msgp)
 {
+    struct timeval lTimeval_tv;
     gIMUMsgArrived_b = true;
     gROSIMUMsg_msg = *pMsg_msgp;
+    gettimeofday(&lTimeval_tv, NULL);
+    gIMUMsgArriveTime_u64 = 
+        (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
+        (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
 }
 
 void vehicleCallback(const autoware_msgs::VehicleStatus::ConstPtr& pMsg_msgp)
 {
+    struct timeval lTimeval_tv;
     gVehicleStatusMsgArrived_b = true;
     gROSVehicleStatusMsg_msg = *pMsg_msgp;
+    gettimeofday(&lTimeval_tv, NULL);
+    gVehicleStatusMsgArriveTime_u64 = 
+        (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
+        (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
 }
 
 void novatelStatusCallback(const novatel_gps_msgs::Inspvax::ConstPtr& pMsg_msgp)
@@ -93,6 +105,7 @@ int main(int argc, char **argv)
     int lROSParamLoopRateHz_i32;
     int lROSParamEstimationMethod_i32;
     double lROSParamKinematicModelMaxSpeed_d;
+    double lROSParamMsgTimeout_d;
     double lROSParamVehicleParamC1_d;
     double lROSParamVehicleParamC2_d;
     double lROSParamVehicleParamM_d;
@@ -123,6 +136,7 @@ int main(int argc, char **argv)
     lROSNodeHandlePrivate_cl.param<bool>("dynamic_time_calc", lROSParamDynamicTimeCalcEnabled_b, false);
     lROSNodeHandlePrivate_cl.param<bool>("do_not_wait_for_gnss_msgs", lROSParamDoNotWaitForGnssMsgs_b, false);
     lROSNodeHandlePrivate_cl.param<double>("kinematic_model_max_speed", lROSParamKinematicModelMaxSpeed_d, 0.5);
+    lROSNodeHandlePrivate_cl.param<double>("msg_timeout", lROSParamMsgTimeout_d, 2000);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c1", lROSParamVehicleParamC1_d, 3000);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_c2", lROSParamVehicleParamC2_d, 3000);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_m", lROSParamVehicleParamM_d, 180);
@@ -130,6 +144,7 @@ int main(int argc, char **argv)
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_l1", lROSParamVehicleParamL1_d, 0.324);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_l2", lROSParamVehicleParamL2_d, 0.976);
     lROSNodeHandlePrivate_cl.param<double>("vehicle_param_swr", lROSParamVehicleParamSWR_d, 1);
+    
 
     ROS_INFO_STREAM("kalman_pos_node started | pose: " << lROSParamPoseTopic_s
                     << " | vehicle_status: " << lROSParamVehicleStatusTopic_s 
@@ -208,7 +223,13 @@ int main(int argc, char **argv)
         std_msgs::Float32 lROSEstTravDistEstPos_msg;
         double lAccuracyScaleFactor_d = 10;
 
-        if ((gPoseMsgArrived_b || lROSParamDoNotWaitForGnssMsgs_b) && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b) {
+        struct timeval lTimeval_tv;
+        gettimeofday(&lTimeval_tv, NULL);
+        unsigned long long lCurrentTime_u64 = 
+            (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
+            (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
+
+        if ( (((lCurrentTime_u64 - gVehicleStatusMsgArriveTime_u64) < lROSParamMsgTimeout_d) && ((lCurrentTime_u64 - gIMUMsgArriveTime_u64) < lROSParamMsgTimeout_d)) && ((gPoseMsgArrived_b || lROSParamDoNotWaitForGnssMsgs_b) && gIMUMsgArrived_b && gVehicleStatusMsgArrived_b)) {
             sModelStates lCurrentModelStates_st;
             double lTmpRoll_d = 0;
             double lTmpPitch_d = 0;

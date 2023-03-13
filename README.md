@@ -126,6 +126,10 @@ roslaunch kalman_pos kalman_pos01.launch
   - type: bool 
   - default value: true
   - description: true if the algrithm in not waiting for the first positon message (use this for the algorithms without GNSS position and orientation estimation)
+- msg_timeout
+  - type: double 
+  - default value: 2000
+  - description: timeout for vehicle status and IMU message, if these messages does not arrive until timeout then the estimation will stop [ms]
 - vehicle_param_c1
   - type: double 
   - default value: 3000

@@ -18,6 +18,7 @@
         <param name="dynamic_time_calc" type="bool" value="true" />
         <param name="kinematic_model_max_speed" type="double" value="0.3" />
         <param name="do_not_wait_for_gnss_msgs" type="bool" value="true" />
+        <param name="msg_timeout" type="double" value="2000" />
         <param name="vehicle_param_c1" type="double" value="3000" />      <!--front wheel cornering stiffness (for single track model) [N/rad]-->
         <param name="vehicle_param_c2" type="double" value="3000" />      <!--rear wheel cornering stiffness (for single track model) [N/rad]-->
         <param name="vehicle_param_m" type="double" value="180" />       <!--mass of the vehicle [kg]-->
