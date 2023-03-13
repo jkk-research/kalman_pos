@@ -271,7 +271,7 @@ int main(int argc, char **argv)
         lROSPubEstimatedTraveledDistanceOdom_cl.publish(lROSEstTravDistOdom_msg);
         lROSPubEstimatedTraveledDistanceEstPos_cl.publish(lROSEstTravDistEstPos_msg);
         
-        /*
+        
         tf2_ros::Buffer lBuffer_cl;
 
         lROSEstPoseBaselink_msg.header.frame_id = "base_link";
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
         transformStamped.transform.rotation.w = lROSEstPoseBaselink_msg.pose.orientation.w;
 
         br.sendTransform(transformStamped);
-*/
+
         lROSEstAccuracyMarker_msg.header.frame_id = "base_link";
         lROSEstAccuracyMarker_msg.header.stamp = ros::Time();
         lROSEstAccuracyMarker_msg.ns = lROSParamEstimatedPoseBaselinkTopic_s;
