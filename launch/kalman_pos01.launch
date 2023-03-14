@@ -11,7 +11,7 @@
         <param name="est_trav_distance_est_pos_topic" type="string" value="estimated_trav_dist_est_pos" />
         <param name="est_baselink_topic" type="string" value="estimated_pose_baselink" />
         <param name="est_accuracy_topic" type="string" value="estimation_accuracy" />
-		<param name="lROSLoopRate_cl_hz" type="int" value="60" />
+		<param name="loop_rate_hz" type="int" value="60" />
 		<param name="estimation_method" type="int" value="8" />
         <param name="gnss_source" type="string" value="none" />
         <param name="vehicle_type" type="string" value="SZEmission" />

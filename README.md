@@ -87,7 +87,7 @@ roslaunch kalman_pos kalman_pos01.launch
   - type: string 
   - default value: estimation_accuracy
   - description: the name of the estimattion accuracy marker topic (Publisher, visualization_msgs::Marker)
-- lROSLoopRate_cl_hz 
+- loop_rate_hz 
   - type: int 
   - default value: 60
   - description: the ROS loop rate of the node (in Hz) 

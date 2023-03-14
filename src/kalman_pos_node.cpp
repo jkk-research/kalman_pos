@@ -130,7 +130,7 @@ int main(int argc, char **argv)
     lROSNodeHandlePrivate_cl.param<std::string>("est_trav_distance_odom_topic", lROSParamEstimatedTravDistOdom_s, "distance");
     lROSNodeHandlePrivate_cl.param<std::string>("est_trav_distance_est_pos_topic", lROSParamEstimatedTravDistEstPos_s, "estimated_trav_dist_est_pos");
     lROSNodeHandlePrivate_cl.param<std::string>("vehicle_type", lROSParamVehicleType_s, "leaf");
-    lROSNodeHandlePrivate_cl.param<int>("lROSLoopRate_cl_hz", lROSParamLoopRateHz_i32, 10);
+    lROSNodeHandlePrivate_cl.param<int>("loop_rate_hz", lROSParamLoopRateHz_i32, 10);
     lROSNodeHandlePrivate_cl.param<int>("estimation_method", lROSParamEstimationMethod_i32, 0);
     lROSNodeHandlePrivate_cl.param<std::string>("gnss_source", lROSParamGnssSource_s, "nova");
     lROSNodeHandlePrivate_cl.param<bool>("dynamic_time_calc", lROSParamDynamicTimeCalcEnabled_b, false);
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
                     << " | est_bl: " << lROSParamEstimatedPoseBaselinkTopic_s
                     << " | est_accuracy: " << lROSParamEstimationAccuracyTopic_s
                     << " | vehicle_type: " << lROSParamVehicleType_s
-                    << " | lROSLoopRate_cl_hz: " << lROSParamLoopRateHz_i32
+                    << " | loop_rate_hz: " << lROSParamLoopRateHz_i32
                     << " | estimation_method: " << lROSParamEstimationMethod_i32
                     << " | gnss_source: " << lROSParamGnssSource_s 
                     << " | dynamic_time_calc_enabled: " << lROSParamDynamicTimeCalcEnabled_b
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
             lAccuracyScaleFactor_d = lPositionEstimation_cl.getAccuracyScaleFactor();
 
             lROSEstPoseCog_msg.header.stamp = ros::Time::now();
-            lROSEstPoseCog_msg.header.frame_id = "lROSEstPoseCog_msg";
+            lROSEstPoseCog_msg.header.frame_id = "pose_cog";
             lROSEstPoseCog_msg.pose.position.x = lCurrentModelStates_st.positionX_d;
             lROSEstPoseCog_msg.pose.position.y = lCurrentModelStates_st.positionY_d;
             lROSEstPoseCog_msg.pose.position.z = 0;
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
         }
         else {
             lROSEstPoseCog_msg.header.stamp = ros::Time::now();
-            lROSEstPoseCog_msg.header.frame_id = "lROSEstPoseCog_msg";
+            lROSEstPoseCog_msg.header.frame_id = "pose_cog";
             lROSEstPoseCog_msg.pose.position.x = 0;
             lROSEstPoseCog_msg.pose.position.y = 0;
             lROSEstPoseCog_msg.pose.position.z = 0;
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
         
         tf2_ros::Buffer lBuffer_cl;
 
-        lROSEstPoseBaselink_msg.header.frame_id = "base_link";
+        lROSEstPoseBaselink_msg.header.frame_id = "pose_base_link";
         lROSEstPoseBaselink_msg.header.stamp = ros::Time::now();
         lROSEstPoseBaselink_msg.pose.position.x = -lPositionEstimation_cl.getCogDistanceFromBaselinkX();
         lROSEstPoseBaselink_msg.pose.position.y =  lPositionEstimation_cl.getCogDistanceFromBaselinkY();
@@ -315,6 +315,9 @@ int main(int argc, char **argv)
         lTsLookup_cl = lBuffer_cl.lookupTransform( lROSEstPoseCog_msg.header.frame_id, lROSEstPoseBaselink_msg.header.frame_id, ros::Time(0));
 
         tf2::doTransform(lROSEstPoseBaselink_msg, lROSEstPoseBaselink_msg, lTsLookup_cl);
+
+        lROSEstPoseBaselink_msg.header.frame_id = "pose_base_link";
+        lROSEstPoseBaselink_msg.header.stamp = ros::Time::now();
 
         lROSPubEstimatedPoseBaselink_cl.publish(lROSEstPoseBaselink_msg);
 
