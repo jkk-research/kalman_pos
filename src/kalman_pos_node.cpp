@@ -296,7 +296,7 @@ int main(int argc, char **argv)
         tf2_ros::Buffer lBuffer_cl;
 
         lROSEstPoseBaselink_msg.header.frame_id = "base_link";
-        //lROSEstPoseBaselink_msg.header.stamp = ros::Time::now();
+        lROSEstPoseBaselink_msg.header.stamp = ros::Time::now();
         lROSEstPoseBaselink_msg.pose.position.x = -lPositionEstimation_cl.getCogDistanceFromBaselinkX();
         lROSEstPoseBaselink_msg.pose.position.y =  lPositionEstimation_cl.getCogDistanceFromBaselinkY();
         lROSEstPoseBaselink_msg.pose.position.z =  lPositionEstimation_cl.getCogDistanceFromBaselinkZ();
