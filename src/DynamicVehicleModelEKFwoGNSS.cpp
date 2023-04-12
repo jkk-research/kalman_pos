@@ -2,6 +2,7 @@
 #include "MatrixInverse.hpp"
 
 #include <math.h>
+#include "ros/ros.h"
 
 double dynEKFwoGNSSLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
 	double lLongitudinalSpeed_d = 0;
@@ -182,9 +183,9 @@ void dynEKFwoGNSSEstimate(sModelStates &pOutModelStates_s, matrix<double>& pOutP
 		ly_v(1) = lMeasYawAngle_d;
 	} else {
 		//ly_v(1) = pPrevModelStates_s.yawAngle_d + lMeasYawRate_d * pTs_d;
-		double lTmpBeta_d = atan(tan(pMeasuredValues_s.steeringAngle_d) * (pVehicleParameters_s.l2_d / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)));
-		ly_v(1) = pPrevModelStates_s.yawAngle_d + pTs_d*(pMeasuredValues_s.vehicleSpeed_d *((tan(pMeasuredValues_s.steeringAngle_d) * cos(lTmpBeta_d)) / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)));
-
+		//double lTmpBeta_d = atan(tan(pMeasuredValues_s.steeringAngle_d) * (pVehicleParameters_s.l2_d / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)));
+		ly_v(1) = pPrevModelStates_s.yawAngle_d + pTs_d*(pMeasuredValues_s.vehicleSpeed_d * sin(atan(tan(pMeasuredValues_s.steeringAngle_d) * (pVehicleParameters_s.l2_d / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)))) /	pVehicleParameters_s.l2_d);
+				//pPrevModelStates_s.yawAngle_d + pTs_d*(pMeasuredValues_s.vehicleSpeed_d *((tan(pMeasuredValues_s.steeringAngle_d) * cos(lTmpBeta_d)) / (pVehicleParameters_s.l2_d + pVehicleParameters_s.l1_d)));
 	}
 	ly_v(2) = lMeasLateralAcc_d;
 

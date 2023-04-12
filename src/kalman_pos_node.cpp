@@ -251,7 +251,7 @@ int main(int argc, char **argv)
             } else {
                 lPositionEstimation_cl.setMeasuredValuesGNSS(gROSCogPositionMsg_msg.pose.position.x, gROSCogPositionMsg_msg.pose.position.y, gROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
             }
-            if ((lROSParamImuTopic_s == "gps/duro/imu")) {
+            if ((lROSParamImuTopic_s == "gps/duro/imu") || (lROSParamImuTopic_s == "imu/data")) {
                 lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x, gROSIMUMsg_msg.linear_acceleration.y, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, -1*gROSIMUMsg_msg.angular_velocity.z);
             } else {
                 lPositionEstimation_cl.setMeasuredValuesIMU(gROSIMUMsg_msg.linear_acceleration.x, gROSIMUMsg_msg.linear_acceleration.y, gROSIMUMsg_msg.linear_acceleration.z, gROSIMUMsg_msg.angular_velocity.x, gROSIMUMsg_msg.angular_velocity.y, gROSIMUMsg_msg.angular_velocity.z);    
