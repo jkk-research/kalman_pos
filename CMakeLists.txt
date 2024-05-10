@@ -1,77 +1,57 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(kalman_pos)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11 -o2)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-# set(CMAKE_PREFIX_PATH _PATH "/opt/ros/melodic;${CMAKE_MODULE_PATH}")
- 
-# find_package(catkin REQUIRED COMPONENTS ${BUILD_DEPENDS})
- 
-# find_package(Boost REQUIRED COMPONENTS system)
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(novatel_gps_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(rcl_interfaces REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
+set(INCLUDE_DIRS 
+  include 
+  ${ament_cmake_INCLUDE_DIRS} 
+  ${rclcpp_INCLUDE_DIRS}
+  ${std_msgs_INCLUDE_DIRS}
+  ${sensor_msgs_INCLUDE_DIRS}
+  ${nav_msgs_INCLUDE_DIRS}
+  ${rclcpp_components_INCLUDE_DIRS}
+  ${novatel_gps_msgs_INCLUDE_DIRS}
+  ${rcl_interfaces_INCLUDE_DIRS}
+  ${tf2_INCLUDE_DIRS}
+)
+include_directories(${INCLUDE_DIRS})
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  nav_msgs
-  roscpp
-  rospy
-  std_msgs
-  autoware_msgs
+set(ament_dependencies
   novatel_gps_msgs
+  rclcpp
+  std_msgs
+  sensor_msgs
+  nav_msgs
+  visualization_msgs
   tf2
+  tf2_msgs
   tf2_ros
+  tf2_geometry_msgs  
 )
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES marathon_waypoint
-#  CATKIN_DEPENDS nav_msgs roscpp rospy std_msgs
-#  DEPENDS system_lib
-)
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(
- include
-  ${catkin_INCLUDE_DIRS}
-)
-
-#set(HEADERS
-#    ${HEADERS}
-#    include/VehicleModelTypeDef.h
-#    include/CombinedVehicleModel.h
-#    include/DynamicVehicleModel.h
-#    include/KinematicVehicleModel.h
-#    include/DynamicVehicleModelEKF.h
-#    include/KinematicVehicleModelEKF.h
-#    include/DynamicVehicleModelEKFwoGNSS.h
-#    include/KinematicVehicleModelEKFwoGNSS.h
-#)
-# 
-# # Local source files here
-# SET(SOURCES
-#     ${SOURCES}
-#     src/CombinedVehicleModel.cpp
-#     src/DynamicVehicleModel.cpp
-#     src/KinematicVehicleModel.cpp
-#     )
 
 add_library(PositionEstimation src/PositionEstimation.cpp ./include/PositionEstimation.h)
 add_library(OrientationEstimation src/OrientationEstimation.cpp ./include/VehicleModelTypeDef.h)
@@ -87,26 +67,27 @@ add_library(KinematicVehicleModelEKFwoGNSS src/KinematicVehicleModelEKFwoGNSS.cp
 target_link_libraries(CombinedVehicleModel PUBLIC DynamicVehicleModel KinematicVehicleModel KinematicVehicleModel2 DynamicVehicleModelEKF KinematicVehicleModelEKF DynamicVehicleModelEKFwoGNSS KinematicVehicleModelEKFwoGNSS)
 target_link_libraries(PositionEstimation PUBLIC CombinedVehicleModel OrientationEstimation)
 
-## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/marathon_waypoint.cpp
-# )
-
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-#add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Declare a C++ executable
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
 add_executable(kalman_pos_node src/kalman_pos_node.cpp)
+ament_target_dependencies(kalman_pos_node  ${ament_dependencies} )
+target_include_directories(kalman_pos_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(kalman_pos_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_link_libraries(kalman_pos_node PositionEstimation)
 
-## Specify libraries to link a library or executable target against
-target_link_libraries(kalman_pos_node PositionEstimation ${catkin_LIBRARIES})
+install(TARGETS kalman_pos_node
+  DESTINATION lib/${PROJECT_NAME})
 
-## The recommended prefix ensures that target names across packages don't collide
-add_executable(kalman_pos_no_aw src/kalman_pos_no_aw.cpp)
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  # comment the line when a copyright and license is added to all source files
+  set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
-## Specify libraries to link a library or executable target against
-target_link_libraries(kalman_pos_no_aw ${catkin_LIBRARIES})
+ament_package()

@@ -1,6 +1,12 @@
 #include "PositionEstimation.h"
 
-#include "tf/transform_datatypes.h"
+#include <sys/time.h>
+#include <boost/date_time/posix_time/ptime.hpp>
+#include "tf2/transform_datatypes.h"
+
+cPositionEstimation::cPositionEstimation() {
+
+}
 
 cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f) {
     initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleType_s, pVehicleParameters_s, pKinematicModelMaxSpeed_f );
@@ -385,12 +391,19 @@ void cPositionEstimation::traveledDistanceCalculation(void) {
     iTravDistanceOdom_d = iTravDistanceOdom_d + iTs_d * abs(iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d);   
 }
     
-void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEstimationMethod_i32, std::string pVehicleType_s, bool pDuroStatusMsgArrived_b, std::string pDuroStatus_s, bool pNovatelStatusMsgArrived_b, std::string pNovatelStatus_s){
-
-    if (iFirstIteration_b) {
+void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEstimationMethod_i32, std::string pVehicleType_s, bool pDuroStatusMsgArrived_b, std::string pDuroStatus_s, bool pNovatelStatusMsgArrived_b, std::string pNovatelStatus_s, bool pReset_b){
+    if (iFirstIteration_b || pReset_b) {
+        iCombinedVehicleModel_cl.initEKFMatrices();
         iCombinedVehicleModel_cl.setPrevEKFMatrices();
         iCombinedVehicleModel_cl.setPrevMeasuredValues();
-        iCombinedVehicleModel_cl.setModelStates(0, 
+
+        switch (pEstimationMethod_i32) {
+            case 2:
+            case 3:
+            case 7:
+            case 8:
+            case 10:
+                    iCombinedVehicleModel_cl.setModelStates(0, 
                                                 iCombinedVehicleModel_cl.iMeasuredValues_s.yawRate_d,  
                                                 iCombinedVehicleModel_cl.iMeasuredValues_s.yawAngle_d, 
                                                 iCombinedVehicleModel_cl.iMeasuredValues_s.lateralAcceleration_d,
@@ -398,6 +411,26 @@ void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEsti
                                                 iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d,
                                                 iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d,
                                                 0);
+                break;
+            case 0:
+            case 1:
+            case 4:
+            case 5:
+            case 6:
+            case 9:
+            default:
+                    iCombinedVehicleModel_cl.setModelStates(0, 
+                                                iCombinedVehicleModel_cl.iMeasuredValues_s.yawRate_d,  
+                                                iCombinedVehicleModel_cl.iMeasuredValues_s.yawAngle_d, 
+                                                iCombinedVehicleModel_cl.iMeasuredValues_s.lateralAcceleration_d,
+                                                0,
+                                                0,
+                                                iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d,
+                                                0);
+                break;
+
+        };
+
         iFirstIteration_b = false;
 
         iPrevMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
