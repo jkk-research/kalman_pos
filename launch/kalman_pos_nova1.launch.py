@@ -6,9 +6,9 @@ def generate_launch_description():
         launch_ros.actions.Node(
             namespace= "kalman_pos", package='kalman_pos', executable='kalman_pos_node', output='screen',
             parameters=[
-                {"pose_topic":"gps/nova/current_pose"},
+                {"pose_topic":"gps/duro/current_pose"},
                 {"vehicle_status_topic":"vehicle_status"},
-                {"nav_sat_fix_topic":"gps/nova/status_string"},
+                {"nav_sat_fix_topic":"gps/duro/status_string"},
                 {"inspvax_topic":"gps/nova/inspvax"},
                 {"imu_topic":"imu/data"},
                 {"est_cog_topic":"estimated_pose_cog"},

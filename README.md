@@ -1,45 +1,69 @@
-# `kalman_pos` ROS package 
+# `kalman_pos` `ROS 2` package
 
-Kálmán filter based ROS node (`geometry_msgs/PoseStamped`, `sensor_msgs/Imu`, `autoware_msgs/VehicleStatus`)
+Kálmán filter based `ROS 2` node (`geometry_msgs/PoseStamped`, `sensor_msgs/Imu`)
+
+[![Static Badge](https://img.shields.io/badge/ROS_2-Humble-34aec5)](https://docs.ros.org/en/humble/)
+
 - [`geometry_msgs/PoseStamped`](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/PoseStamped.html)
 - [`sensor_msgs/Imu`](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/Imu.html)
-- `autoware_msgs/VehicleStatus` - *Warning*: Autoware sometimes [changes](https://gitlab.com/autowarefoundation/autoware.ai/messages/-/merge_requests/16/diffs?commit_id=234ad070a92063b64ea8df792b46b59fefd5fe1f) the messages.
+- novatel [github.com/jkk-research/novatel_gps_driver](https://github.com/jkk-research/novatel_gps_driver)
 
 ## Build
 
+``` bash
+cd ~/ros2_ws/src 
 ```
-cd ~/catkin_ws/src/
+
+``` bash
 git clone https://github.com/jkk-research/kalman_pos
-catkin build kalman_pos
-source ~/.bashrc
 ```
-(it is assumed that `.bashrc` contains `source ~/catkin_ws/devel/setup.bash`)
+
+``` bash
+cd ~/ros2_ws
+```
+
+``` bash
+colcon build --symlink-install --packages-select kalman_pos novatel_gps_msgs
+```
 
 # ROS publications / subscriptions
 
 ```mermaid
 flowchart LR
 
-A[imu] -->|sensor_msgs/Imu| F(kalman_pos)
-B[current_pose] -->|geometry_msgs/PoseStamped| F
-C[vehicle_status] -->|autoware_msgs/VehicleStatus| F
-D[nova_fix] -->|sensor_msgs/NavSatFix| F
-E[duro_status] -->|std_msgs::String| F
-F --> |geometry_msgs/PoseStamped| G[estimated_pose_cog]
-F --> |geometry_msgs/PoseStamped| H[estimated_pose_baselink]
-F --> |std_msgs/Float32| I[distance]
-F --> |std_msgs/Float32| J[estimated_trav_dist_est_pos]
-F --> |visualization_msgs/Marker| K[estimation_accuracy]
+A[imu<br/>sensor_msgs/Imu] --> F(kalman_pos)
+B[current_pose<br/>geometry_msgs/PoseStamped] --> F
+C[vehicle_status<br/>geometry_msgs/Twist] --> F
+D[nova_fix<br/>sensor_msgs/NavSatFix] --> F
+E[duro_status<br/>std_msgs/String] --> F
+F -->  G[estimated_pose_cog<br/>geometry_msgs/PoseStamped]
+F -->  H[estimated_pose_baselink<br/>geometry_msgs/PoseStamped]
+F -->  I[distance<br/>std_msgs/Float32]
+F -->  J[estimated_trav_dist_est_pos<br/>std_msgs/Float32]
+F -->  K[estimation_accuracy<br/>visualization_msgs/Marker]
+
+classDef light fill:#34aec5,stroke:#152742,stroke-width:2px,color:#152742  
+classDef dark fill:#152742,stroke:#34aec5,stroke-width:2px,color:#34aec5
+classDef white fill:#ffffff,stroke:#152742,stroke-width:2px,color:#152742
+classDef red fill:#ef4638,stroke:#152742,stroke-width:2px,color:#fff
+
+class F red
+class A,B,C,D,E,G,H,I,J,K light
+
 ```
 
 ## Run
 
-```
-rosrun kalman_pos kalman_pos_node _pose_topic:=current_pose
-```
+<details>
+<summary> Don't forget to source before ROS commands.</summary>
 
+``` bash
+source ~/ros2_ws/install/setup.bash
 ```
-roslaunch kalman_pos kalman_pos01.launch
+</details>
+
+``` bash
+ros2 launch kalman_pos kalman_pos_node.launch.py
 ```
 
 ### Parameters
@@ -161,10 +185,23 @@ roslaunch kalman_pos kalman_pos01.launch
 
 ## Rosbag
 
-Download: [jkk-research.github.io/#dataset](https://jkk-research.github.io/#dataset)
+Download: [jkk-research.github.io/dataset](https://jkk-research.github.io/dataset)
 
 ```
-rosbag play -l leaf-2022-03-26-zala-smart-city.bag
+ros2 bag play -l TODO.mcap
 ```
 
+# Cite & paper
 
+If you use any of this code please consider citing the [paper TODO]():
+
+```bibtex
+@Article{roadfilt2022horv,
+    title = {TODO},
+    author = {},
+    journal = {},
+    volume = {},
+    url = {},
+    doi = {}
+}
+```

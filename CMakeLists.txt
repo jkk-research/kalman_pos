@@ -75,7 +75,11 @@ target_include_directories(kalman_pos_node PUBLIC
 target_compile_features(kalman_pos_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_link_libraries(kalman_pos_node PositionEstimation)
 
-install(TARGETS kalman_pos_node
+install(DIRECTORY 
+  launch
+  DESTINATION share/${PROJECT_NAME})
+install(TARGETS
+  kalman_pos_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
