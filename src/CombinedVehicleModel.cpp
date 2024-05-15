@@ -357,7 +357,8 @@ void cCombinedVehicleModel::initVehicleParameters( std::string pVehicleType_s, s
         iVehicleParameters_s.l1_d   = pVehicleParameters_s.l1_d;
         iVehicleParameters_s.l2_d   = pVehicleParameters_s.l2_d;
         iVehicleParameters_s.swr_d  = pVehicleParameters_s.swr_d;
-    } else if (pVehicleType_s == "SZEmission") {
+    } 
+    else if (pVehicleType_s == "SZEmission") {
         /*
         iVehicleParameters_s.c1_d   = 3000;//4000;
         iVehicleParameters_s.c2_d   = 800;//2400; // The ratio is very important!!!!!
