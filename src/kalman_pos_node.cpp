@@ -3,7 +3,7 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <geometry_msgs/msg/transform_stamped.h>
-#include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/string.hpp>
@@ -94,7 +94,7 @@ class KalmanPosNode : public rclcpp::Node
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Subscriptions");
             iROSSubPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamPoseTopic_s, 1000, std::bind(&KalmanPosNode::poseCallback, this, std::placeholders::_1));
-            iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::Twist>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
+            iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::TwistStamped>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
             iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
             iROSSubIMU_cl = this->create_subscription<sensor_msgs::msg::Imu>(iROSParamImuTopic_s, 1000, std::bind(&KalmanPosNode::imuCallback, this, std::placeholders::_1));
             
@@ -192,7 +192,7 @@ class KalmanPosNode : public rclcpp::Node
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr iROSSubPose_cl;
         rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubNavSatFix_cl;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr iROSSubIMU_cl;
-        rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr iROSSubVehicleStatus_cl;
+        rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr iROSSubVehicleStatus_cl;
 
         std::unique_ptr<tf2_ros::TransformBroadcaster> iEstPosBaselinkTransformBroadcaster_cl;
 
@@ -200,7 +200,7 @@ class KalmanPosNode : public rclcpp::Node
         geometry_msgs::msg::PoseStamped iROSCogPositionMsg_msg;
         sensor_msgs::msg::NavSatFix iROSNavSatFixMsg_msg;
         sensor_msgs::msg::Imu iROSIMUMsg_msg;
-        geometry_msgs::msg::Twist iROSVehicleStatusMsg_msg;
+        geometry_msgs::msg::TwistStamped iROSVehicleStatusMsg_msg;
 
         void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
         {
@@ -229,7 +229,7 @@ class KalmanPosNode : public rclcpp::Node
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
         }
 
-        void vehicleCallback(const geometry_msgs::msg::Twist::ConstSharedPtr pMsg_msgp)
+        void vehicleCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr pMsg_msgp)
         {
             RCLCPP_INFO_ONCE(this->get_logger(), "Vehicle Callback");
             struct timeval lTimeval_tv;
@@ -283,7 +283,7 @@ class KalmanPosNode : public rclcpp::Node
                 //} else {
                 //    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);    
                 //}
-                iPositionEstimation_cl.setMeasuredValuesVehicleState(iROSVehicleStatusMsg_msg.angular.z*1, iROSVehicleStatusMsg_msg.linear.x*1);
+                iPositionEstimation_cl.setMeasuredValuesVehicleState(iROSVehicleStatusMsg_msg.twist.angular.z*1, iROSVehicleStatusMsg_msg.twist.linear.x*1);
 
                 // TODO no message for driving mode
                 int32_t lPrevDrivingMode_i32 = iDrivingMode_i32;
@@ -428,7 +428,7 @@ class KalmanPosNode : public rclcpp::Node
                 if (param.get_name() == "vehicle_status_topic")
                 {
                     iROSParamVehicleStatusTopic_s = param.as_string();
-                    iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::Twist>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
+                    iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::TwistStamped>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
                 }
                 if (param.get_name() == "nav_sat_fix_topic")
                 {
