@@ -8,15 +8,15 @@ cPositionEstimation::cPositionEstimation() {
 
 }
 
-cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f) {
-    initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleType_s, pVehicleParameters_s, pKinematicModelMaxSpeed_f );
+cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f) {
+    initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleParameters_s, pKinematicModelMaxSpeed_f );
 }
 
 cPositionEstimation::~cPositionEstimation() {
 
 }
 
-void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f ) {
+void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f ) {
     iFirstIteration_b = true;
     iLoopRateHz_i32 = pLoopRateHz_i32;
     iTs_d = 1 / iLoopRateHz_i32;
@@ -43,8 +43,8 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     lVehicleParameters_s.l2_d   = 0.976;
     lVehicleParameters_s.swr_d  = 1;
 
-    iCombinedVehicleModel_cl = cCombinedVehicleModel("SZEmission", lVehicleParameters_s);
-    iCombinedVehicleModel_cl.initVehicleParameters(pVehicleType_s, pVehicleParameters_s);
+    iCombinedVehicleModel_cl = cCombinedVehicleModel(lVehicleParameters_s);
+    iCombinedVehicleModel_cl.initVehicleParameters(pVehicleParameters_s);
     iCombinedVehicleModel_cl.initEKFMatrices();
 
     iKinSpeedLimit_d = pKinematicModelMaxSpeed_f;
@@ -67,291 +67,104 @@ void cPositionEstimation::setMeasuredValuesIMU(double pLongitudinalAcceleration_
     iCombinedVehicleModel_cl.setMeasuredValuesIMU(pLongitudinalAcceleration_d, pLateralAcceleration_d, pVerticalAcceleration_d, pRollRate_d, pPitchRate_d, pYawRate_d);
 }
 
-void cPositionEstimation::selectEstimationMode(std::string pGnssSource_s, int pEstimationMethod_i32, std::string pVehicleType_s, bool pDuroStatusMsgArrived_b, std::string pDuroStatus_s, bool pNovatelStatusMsgArrived_b, std::string pNovatelStatus_s){
+void cPositionEstimation::selectEstimationMode(int pEstimationMethod_i32, bool pGNSSStatusMsgArrived_b, int8_t pGNSSState_i8){
     iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
     iAccuracyScaleFactor_d = 10;
+    iGNSSState_e = eGNSSState::off;
+    iEstimationMode_e = eEstimationMode::model;
 
-    // The GNSS source is Novatel and we are using automatic selection method
-    if (pGnssSource_s == "nova") {
-        if ((!pNovatelStatusMsgArrived_b) || (pEstimationMethod_i32 == 0)) {
-            iEstimationMode_e = eEstimationMode::model;
-            iGNSSState_e = eGNSSState::off;
-            iAccuracyScaleFactor_d = 10;
-            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-        } else {
-            if(pNovatelStatus_s ==  "NONE"){ //POSITION_TYPE_NONE
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-            else if(pNovatelStatus_s ==  "INS_SBAS"){ //POSITION_TYPE_SBAS
-                iEstimationMode_e = eEstimationMode::ekf;
-                iGNSSState_e = eGNSSState::rtk_float;
-                //lEstimationMode_e = eEstimationMode::model;
-                //lGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-            else if(pNovatelStatus_s ==  "SINGLE"){ //POSITION_TYPE_PSEUDORANGE_SINGLE_POINT
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-            else if(pNovatelStatus_s ==  "PSRDIFF"){ //POSITION_TYPE_PSEUDORANGE_DIFFERENTIAL
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-            else if(pNovatelStatus_s ==  "INS_RTKFLOAT"){ //POSITION_TYPE_RTK_FLOAT
-                iEstimationMode_e = eEstimationMode::ekf;
-                iGNSSState_e = eGNSSState::rtk_float;
-                iAccuracyScaleFactor_d = 2.5;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-            else if(pNovatelStatus_s ==  "INS_RTKFIXED"){ //POSITION_TYPE_RTK_FIXED
-                iEstimationMode_e = eEstimationMode::ekf;
-                iGNSSState_e = eGNSSState::rtk_fixed;
-                iAccuracyScaleFactor_d = 1;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-            else{
-                iEstimationMode_e = eEstimationMode::model;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-            }
-        }
-    } else if (pGnssSource_s == "duro") { // The GNSS source is Duroand we are using automatic selection method
-        if ((!pDuroStatusMsgArrived_b) || (pEstimationMethod_i32 == 0)){
-            iEstimationMode_e = eEstimationMode::model;
-            iGNSSState_e = eGNSSState::off;
-            iAccuracyScaleFactor_d = 10;
-        } else {
-            if (pDuroStatus_s == "Invalid") {
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-            } else if (pDuroStatus_s == "Single Point Position (SPP)") {
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-            }  else if (pDuroStatus_s == "Differential GNSS (DGNSS)") {
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-            }  else if (pDuroStatus_s == "Float RTK") {
-                iEstimationMode_e = eEstimationMode::ekf;
-                iGNSSState_e = eGNSSState::rtk_float;
-                iAccuracyScaleFactor_d = 2.5;
-            }  else if (pDuroStatus_s == "Fixed RTK") {
-                iEstimationMode_e = eEstimationMode::ekf;
-                iGNSSState_e = eGNSSState::rtk_fixed;
-                iAccuracyScaleFactor_d = 1;
-            }  else if (pDuroStatus_s == "Dead Reckoning (DR)") {
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-            }  else if (pDuroStatus_s == "SBAS Position") {
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::pseudorange;
-                iAccuracyScaleFactor_d = 5;
-            } else {
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-            }
-        }
-    } else { // We are not using automatic selection method or the GNSS source is not Duro or Novatel
-        switch (pEstimationMethod_i32) {
-            case 0: // Kinematic model without EKF and without GNSS
-                iEstimationMode_e = eEstimationMode::model;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
+    switch (pEstimationMethod_i32) {
+        case 0: // Kinematic model without EKF and without GNSS
                 iKinSpeedLimit_d = 200;
-                break;
-            case 1: // Kinematic + dynamic model without EKF and without GNSS
-                iEstimationMode_e = eEstimationMode::model;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                break;
-            case 2: // Kinematic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
+            break;
+        case 1: // Kinematic + dynamic model without EKF and without GNSS
+            break;
+        case 2: // Kinematic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
                 if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    iEstimationMode_e = eEstimationMode::model;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
                     iKinSpeedLimit_d = 200;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
                         iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
-                    iEstimationMode_e = eEstimationMode::model;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
                     iKinSpeedLimit_d = 200;
                 }
                 iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                break;
-            case 3: // Kinematic + dynamic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS) 
-                if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    iEstimationMode_e = eEstimationMode::model;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                } else {
+            break;
+        case 3: // Kinematic + dynamic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS) 
+                if (iOrientationEstimation_cl.iOrientationIsValid_b) {
                     if (!iPrevOrientationIsValid_b) {
                         iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
-                    iEstimationMode_e = eEstimationMode::model;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 }
                 iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                break;
-            case 5: // Kinematic model with EKF and without GNSS
+            break;
+        case 5: // Kinematic model with EKF and without GNSS
                 iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
                 iKinSpeedLimit_d = 200;
-                break;
-            case 6: // Kinematic + dynaicmodel with EKF and without GNSS
+            break;
+        case 6: // Kinematic + dynaicmodel with EKF and without GNSS
                 iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                break;
-            case 7: // Kinematic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
+            break;
+        case 7: // Kinematic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
                 if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
                     iKinSpeedLimit_d = 200;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
                         iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
                     iKinSpeedLimit_d = 200;
                 }
                 iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                break;
-            case 8: // Kinematic + dynamic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
+            break;
+        case 8: // Kinematic + dynamic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
                 if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
                         iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 }
                 iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                break;
-            case 9: // Kinematic + dynamic model with EKF and without GNSS position but with yaw rate calculation (based on GNSS)
+            break;
+        case 9: // Kinematic + dynamic model with EKF and without GNSS position but with yaw rate calculation (based on GNSS)
                 if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                     iGNSSState_e = eGNSSState::SBAS;
-                    iAccuracyScaleFactor_d = 10;
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 } else {
                     if (!iPrevOrientationIsValid_b) {
                         iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                     }
                     iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
                     iGNSSState_e = eGNSSState::SBAS;
-                    iAccuracyScaleFactor_d = 10;
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
                 }
                 iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                break;
-
-            case 10: 
-                if (pVehicleType_s == "SZEmission") {
-                    if ((!pDuroStatusMsgArrived_b)){
-                        if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                                iGNSSState_e = eGNSSState::off;
-                                iAccuracyScaleFactor_d = 10;
-                                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                            } else {
-                                if (!iPrevOrientationIsValid_b) {
-                                    iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                                }
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                            }
-                            iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                            break;
-                    } else {
-                        iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                        if (pDuroStatus_s == "Invalid") {
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                        } else if (pDuroStatus_s == "Single Point Position (SPP)") {
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                        }  else if (pDuroStatus_s == "Differential GNSS (DGNSS)") {
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                        }  else if (pDuroStatus_s == "Float RTK") {
-                            iEstimationMode_e = eEstimationMode::ekf;
-                            iGNSSState_e = eGNSSState::rtk_float;
-                            iAccuracyScaleFactor_d = 2.5;
-                        }  else if (pDuroStatus_s == "Fixed RTK") {
-                            iEstimationMode_e = eEstimationMode::ekf;
-                            iGNSSState_e = eGNSSState::rtk_fixed;
-                            iAccuracyScaleFactor_d = 1;
-                        }  else if (pDuroStatus_s == "Dead Reckoning (DR)") {
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                        }  else if (pDuroStatus_s == "SBAS Position") {
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                        } else {
-                            iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                            iGNSSState_e = eGNSSState::off;
-                            iAccuracyScaleFactor_d = 10;
-                            iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
+            break;
+        case 10: 
+                if ((!pGNSSStatusMsgArrived_b)){
+                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                    if (iOrientationEstimation_cl.iOrientationIsValid_b) {
+                        if (!iPrevOrientationIsValid_b) {
+                            iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
                         }
                     }
+                    iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
+                    break;
                 } else {
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::off;
-                    iAccuracyScaleFactor_d = 10;
                     iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
+                    if (pGNSSState_i8 < 2) {
+                        iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
+                    } else {
+                        iEstimationMode_e = eEstimationMode::ekf;
+                        iGNSSState_e = eGNSSState::rtk_fixed;
+                        iAccuracyScaleFactor_d = 1;
+                    } 
                 }
-                break;
-            default:
-                //lEstimationMode_e = eEstimationMode::model;
-                iEstimationMode_e = eEstimationMode::model;
-                iGNSSState_e = eGNSSState::off;
-                iAccuracyScaleFactor_d = 10;
-                iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                break;
-        }
+            break;
+        default:
+            break;
     }
 }
 
@@ -391,7 +204,7 @@ void cPositionEstimation::traveledDistanceCalculation(void) {
     iTravDistanceOdom_d = iTravDistanceOdom_d + iTs_d * abs(iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d);   
 }
     
-void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEstimationMethod_i32, std::string pVehicleType_s, bool pDuroStatusMsgArrived_b, std::string pDuroStatus_s, bool pNovatelStatusMsgArrived_b, std::string pNovatelStatus_s, bool pReset_b){
+void cPositionEstimation::iterateEstimation(int pEstimationMethod_i32, bool pGNSSStatusMsgArrived_b, int8_t pGNSSState_i8, bool pReset_b){
     if (iFirstIteration_b || pReset_b) {
         iCombinedVehicleModel_cl.initEKFMatrices();
         iCombinedVehicleModel_cl.setPrevEKFMatrices();
@@ -439,7 +252,7 @@ void cPositionEstimation::iterateEstimation(std::string pGnssSource_s, int pEsti
         iPrevEstPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
     }
 
-    selectEstimationMode(pGnssSource_s, pEstimationMethod_i32, pVehicleType_s, pDuroStatusMsgArrived_b, pDuroStatus_s, pNovatelStatusMsgArrived_b, pNovatelStatus_s);
+    selectEstimationMode(pEstimationMethod_i32, pGNSSStatusMsgArrived_b, pGNSSState_i8);
        
     cycleTimeCalculation();
 

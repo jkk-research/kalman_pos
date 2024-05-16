@@ -121,7 +121,7 @@ ros2 launch kalman_pos kalman_pos_node.launch.py
     - `7`: Kinematic model with EKF and without GNSS position; initial GNSS based orientation estimation enabled
     - `8`: Kinematic + dynamic model with EKF and without GNSS position; initial GNSS based orientation estimation enabled 
     - `9`: Currently used for debugging
-    - `10`: Automatically switch between the different estimation methods
+    - `10`: Used only when the vehicle_type is "SZEmission" and GNSS is based on Duro. Automatically switch between the different estimation methods
 - `dynamic_time_calc` 
   - type: `bool` 
   - default value: `true`

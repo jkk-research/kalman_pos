@@ -14,12 +14,12 @@ cCombinedVehicleModel::cCombinedVehicleModel() {
     lVehicleParameters_s.swr_d  = 1;
 
     initEKFMatrices();
-    initVehicleParameters(  "SZEmission", lVehicleParameters_s);
+    initVehicleParameters(lVehicleParameters_s);
 }
 
-cCombinedVehicleModel::cCombinedVehicleModel(std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s) {
+cCombinedVehicleModel::cCombinedVehicleModel(sVehicleParameters &pVehicleParameters_s) {
         initEKFMatrices();
-        initVehicleParameters(pVehicleType_s, pVehicleParameters_s);
+        initVehicleParameters(pVehicleParameters_s);
 }
 
 cCombinedVehicleModel::~cCombinedVehicleModel() {
@@ -339,51 +339,14 @@ void cCombinedVehicleModel::setPrevEKFMatrices(void) {
     }
 }
 
-void cCombinedVehicleModel::initVehicleParameters( std::string pVehicleType_s, sVehicleParameters &pVehicleParameters_s) {
-    if (pVehicleType_s == "leaf") {
-        /*
-        iVehicleParameters_s.c1_d   = 40000;
-        iVehicleParameters_s.c2_d   = 24000;
-        iVehicleParameters_s.m_d    = 1920;
-        iVehicleParameters_s.jz_d   = 2700;
-        iVehicleParameters_s.l1_d   = 1.1615;
-        iVehicleParameters_s.l2_d   = 1.5385;
-        iVehicleParameters_s.swr_d  = 1;
-        */
-        iVehicleParameters_s.c1_d   = pVehicleParameters_s.c1_d;
-        iVehicleParameters_s.c2_d   = pVehicleParameters_s.c2_d;
-        iVehicleParameters_s.m_d    = pVehicleParameters_s.m_d;
-        iVehicleParameters_s.jz_d   = pVehicleParameters_s.jz_d;
-        iVehicleParameters_s.l1_d   = pVehicleParameters_s.l1_d;
-        iVehicleParameters_s.l2_d   = pVehicleParameters_s.l2_d;
-        iVehicleParameters_s.swr_d  = pVehicleParameters_s.swr_d;
-    } 
-    else if (pVehicleType_s == "SZEmission") {
-        /*
-        iVehicleParameters_s.c1_d   = 3000;//4000;
-        iVehicleParameters_s.c2_d   = 800;//2400; // The ratio is very important!!!!!
-        iVehicleParameters_s.m_d    = 180;
-        iVehicleParameters_s.jz_d   = 270;
-        iVehicleParameters_s.l1_d   = 1.3 - 0.976;
-        iVehicleParameters_s.l2_d   = 0.976;
-        iVehicleParameters_s.swr_d  = 1;
-        */
-        iVehicleParameters_s.c1_d   = pVehicleParameters_s.c1_d;
-        iVehicleParameters_s.c2_d   = pVehicleParameters_s.c2_d;
-        iVehicleParameters_s.m_d    = pVehicleParameters_s.m_d;
-        iVehicleParameters_s.jz_d   = pVehicleParameters_s.jz_d;
-        iVehicleParameters_s.l1_d   = pVehicleParameters_s.l1_d;
-        iVehicleParameters_s.l2_d   = pVehicleParameters_s.l2_d;
-        iVehicleParameters_s.swr_d  = pVehicleParameters_s.swr_d;
-    } else {
-        iVehicleParameters_s.c1_d   = pVehicleParameters_s.c1_d;
-        iVehicleParameters_s.c2_d   = pVehicleParameters_s.c2_d;
-        iVehicleParameters_s.m_d    = pVehicleParameters_s.m_d;
-        iVehicleParameters_s.jz_d   = pVehicleParameters_s.jz_d;
-        iVehicleParameters_s.l1_d   = pVehicleParameters_s.l1_d;
-        iVehicleParameters_s.l2_d   = pVehicleParameters_s.l2_d;
-        iVehicleParameters_s.swr_d  = pVehicleParameters_s.swr_d;
-    }
+void cCombinedVehicleModel::initVehicleParameters( sVehicleParameters &pVehicleParameters_s) {
+    iVehicleParameters_s.c1_d   = pVehicleParameters_s.c1_d;
+    iVehicleParameters_s.c2_d   = pVehicleParameters_s.c2_d;
+    iVehicleParameters_s.m_d    = pVehicleParameters_s.m_d;
+    iVehicleParameters_s.jz_d   = pVehicleParameters_s.jz_d;
+    iVehicleParameters_s.l1_d   = pVehicleParameters_s.l1_d;
+    iVehicleParameters_s.l2_d   = pVehicleParameters_s.l2_d;
+    iVehicleParameters_s.swr_d  = pVehicleParameters_s.swr_d;
 }
 
 void cCombinedVehicleModel::setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d) {

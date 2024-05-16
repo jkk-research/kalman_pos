@@ -39,8 +39,6 @@ class KalmanPosNode : public rclcpp::Node
             iNavSatFixMsgArrived_b = false;
             iIMUMsgArrived_b = false;
             iVehicleStatusMsgArrived_b = false;
-            iNovatelStatusMsgArrived_b = false;
-            iDuroStatusMsgArrived_b = false;
             iIMUMsgArriveTime_u64 = 0;
             iVehicleStatusMsgArriveTime_u64 = 0;
             iDrivingMode_i32 = 0;
@@ -49,18 +47,14 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<std::string>("pose_topic", "gps/duro/current_pose");
             this->declare_parameter<std::string>("vehicle_status_topic", "vehicle_status");
             this->declare_parameter<std::string>("nav_sat_fix_topic", "gps/nova/fix");
-            this->declare_parameter<std::string>("duro_status_string_topic", "gps/duro/status_string");
-            this->declare_parameter<std::string>("inspvax_topic", "gps/nova/inspvax" );
             this->declare_parameter<std::string>("imu_topic", "imu/data");
             this->declare_parameter<std::string>("est_cog_topic", "estimated_pose_cog");
             this->declare_parameter<std::string>("est_baselink_topic", "estimated_pose_baselink");
             this->declare_parameter<std::string>("est_accuracy_topic",  "estimation_accuracy");
             this->declare_parameter<std::string>("est_trav_distance_odom_topic", "distance");
             this->declare_parameter<std::string>("est_trav_distance_est_pos_topic", "estimated_trav_dist_est_pos");
-            this->declare_parameter<std::string>("vehicle_type", "SZEmission");
             this->declare_parameter<int>("loop_rate_hz", 60);
             this->declare_parameter<int>("estimation_method", 6);
-            this->declare_parameter<std::string>("gnss_source", "none");
             this->declare_parameter<bool>("dynamic_time_calc",  true);
             this->declare_parameter<bool>("do_not_wait_for_gnss_msgs", true);
             this->declare_parameter<double>("kinematic_model_max_speed", 0.3);
@@ -83,11 +77,7 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("est_trav_distance_est_pos_topic", iROSParamEstimatedTravDistEstPos_s);
             this->get_parameter("est_accuracy_topic", iROSParamEstimationAccuracyTopic_s);
             this->get_parameter("nav_sat_fix_topic", iROSParamNavSatFixTopic_s);
-            this->get_parameter("duro_status_string_topic", iROSParamDuroStatusStringTopic_s); 
-            this->get_parameter("inspvax_topic", iROSParamInspvaxTopic_s); 
             this->get_parameter("vehicle_status_topic", iROSParamVehicleStatusTopic_s);
-            this->get_parameter("vehicle_type", iROSParamVehicleType_s);
-            this->get_parameter("gnss_source", iROSParamGnssSource_s);
             this->get_parameter("dynamic_time_calc", iROSParamDynamicTimeCalcEnabled_b); 
             this->get_parameter("do_not_wait_for_gnss_msgs", iROSParamDoNotWaitForGnssMsgs_b);
             this->get_parameter("loop_rate_hz", iROSParamLoopRateHz_i32);
@@ -105,15 +95,7 @@ class KalmanPosNode : public rclcpp::Node
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Subscriptions");
             iROSSubPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamPoseTopic_s, 1000, std::bind(&KalmanPosNode::poseCallback, this, std::placeholders::_1));
             iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::Twist>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
-            //if (iROSParamGnssSource_s == "nova"){
-                //iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
-            //}
-            //if (iROSParamGnssSource_s == "nova") {
-                //iROSSubInspvax_cl = this->create_subscription<std_msgs::msg::String>(iROSParamInspvaxTopic_s, 1000, std::bind(&KalmanPosNode::novatelStatusCallback, this, std::placeholders::_1));
-            //}
-            //if ((iROSParamGnssSource_s == "duro") || (iROSParamVehicleType_s == "SZEmission")) {
-                iROSSubDuroStatus_cl = this->create_subscription<std_msgs::msg::String>(iROSParamDuroStatusStringTopic_s, 1000, std::bind(&KalmanPosNode::duroStatusStringCallback, this, std::placeholders::_1));
-            // }
+            iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
             iROSSubIMU_cl = this->create_subscription<sensor_msgs::msg::Imu>(iROSParamImuTopic_s, 1000, std::bind(&KalmanPosNode::imuCallback, this, std::placeholders::_1));
             
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Publisher");
@@ -141,7 +123,6 @@ class KalmanPosNode : public rclcpp::Node
             RCLCPP_INFO_ONCE(this->get_logger(), "Init Estimation");
             iPositionEstimation_cl.initEstimation(  iROSParamDynamicTimeCalcEnabled_b,
                                                     iROSParamLoopRateHz_i32,
-                                                    iROSParamVehicleType_s, 
                                                     iVehicleParameters_s,
                                                     iROSParamKinematicModelMaxSpeed_d);
 
@@ -150,16 +131,13 @@ class KalmanPosNode : public rclcpp::Node
                     std::chrono::milliseconds((1/iROSParamLoopRateHz_i32) * 1000),
                     std::bind(&KalmanPosNode::timerCallback, this));
 
-            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tPose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tDuro status Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tVehicle Type: %s\n\tLoop Rate [Hz]: %d\n\tEst. Method: %d\n\tGNSS Source: %s\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tInspVax Topic: %s\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n", 
+            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tPose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tEst. Method: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n", 
                                                     iROSParamPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
-                                                    iROSParamNavSatFixTopic_s.c_str(), iROSParamDuroStatusStringTopic_s.c_str(), 
-                                                    iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
+                                                    iROSParamNavSatFixTopic_s.c_str(), iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
                                                     iROSParamEstimatedPoseBaselinkTopic_s.c_str(), iROSParamEstimationAccuracyTopic_s.c_str(),
-                                                    iROSParamVehicleType_s.c_str(), iROSParamLoopRateHz_i32, iROSParamEstimationMethod_i32,
-                                                    iROSParamGnssSource_s.c_str(), iROSParamDynamicTimeCalcEnabled_b, 
+                                                    iROSParamLoopRateHz_i32, iROSParamEstimationMethod_i32, iROSParamDynamicTimeCalcEnabled_b, 
                                                     iROSParamDoNotWaitForGnssMsgs_b, iROSParamKinematicModelMaxSpeed_d, iROSParamMsgTimeout_d,
-                                                    iROSParamInspvaxTopic_s.c_str(), iROSParamEstimatedTravDistOdom_s.c_str(), iROSParamEstimatedTravDistEstPos_s.c_str(), 
-                                                    iROSParamVehicleParamC1_d, 
+                                                    iROSParamEstimatedTravDistOdom_s.c_str(), iROSParamEstimatedTravDistEstPos_s.c_str(), iROSParamVehicleParamC1_d, 
                                                     iROSParamVehicleParamC2_d, iROSParamVehicleParamM_d, iROSParamVehicleParamJz_d,
                                                     iROSParamVehicleParamL1_d, iROSParamVehicleParamL2_d, iROSParamVehicleParamSWR_d );
 
@@ -178,11 +156,7 @@ class KalmanPosNode : public rclcpp::Node
         std::string iROSParamEstimatedTravDistEstPos_s;
         std::string iROSParamEstimationAccuracyTopic_s;
         std::string iROSParamNavSatFixTopic_s;
-        std::string iROSParamDuroStatusStringTopic_s; 
-        std::string iROSParamInspvaxTopic_s; 
         std::string iROSParamVehicleStatusTopic_s;
-        std::string iROSParamVehicleType_s;
-        std::string iROSParamGnssSource_s;
         bool iROSParamDynamicTimeCalcEnabled_b; 
         bool iROSParamDoNotWaitForGnssMsgs_b;
         int iROSParamEstimationMethod_i32;
@@ -205,8 +179,6 @@ class KalmanPosNode : public rclcpp::Node
         bool iNavSatFixMsgArrived_b;
         bool iIMUMsgArrived_b;
         bool iVehicleStatusMsgArrived_b;
-        bool iNovatelStatusMsgArrived_b;
-        bool iDuroStatusMsgArrived_b;
         uint64_t iIMUMsgArriveTime_u64;
         uint64_t iVehicleStatusMsgArriveTime_u64;
         
@@ -221,8 +193,6 @@ class KalmanPosNode : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubNavSatFix_cl;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr iROSSubIMU_cl;
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr iROSSubVehicleStatus_cl;
-        rclcpp::Subscription<novatel_gps_msgs::msg::Inspvax>::SharedPtr iROSSubInspvax_cl;
-        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr iROSSubDuroStatus_cl;
 
         std::unique_ptr<tf2_ros::TransformBroadcaster> iEstPosBaselinkTransformBroadcaster_cl;
 
@@ -231,8 +201,6 @@ class KalmanPosNode : public rclcpp::Node
         sensor_msgs::msg::NavSatFix iROSNavSatFixMsg_msg;
         sensor_msgs::msg::Imu iROSIMUMsg_msg;
         geometry_msgs::msg::Twist iROSVehicleStatusMsg_msg;
-        novatel_gps_msgs::msg::Inspvax iROSNovatelStatusMsg_msg;
-        std_msgs::msg::String iROSDuroStatusMsg_msg;
 
         void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
         {
@@ -273,20 +241,6 @@ class KalmanPosNode : public rclcpp::Node
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
         }
 
-        void novatelStatusCallback(const novatel_gps_msgs::msg::Inspvax::ConstSharedPtr pMsg_msgp)
-        {
-            RCLCPP_INFO_ONCE(this->get_logger(), "Novatel Status Callback");
-            iNovatelStatusMsgArrived_b = true;
-            iROSNovatelStatusMsg_msg = *pMsg_msgp;
-        }
-
-        void duroStatusStringCallback(const std_msgs::msg::String::ConstSharedPtr pMsg_msgp)
-        {
-            RCLCPP_INFO_ONCE(this->get_logger(), "Duro Status Callback");
-            iDuroStatusMsgArrived_b = true;
-            iROSDuroStatusMsg_msg = *pMsg_msgp;
-        }
-
         void timerCallback()
         {
             RCLCPP_INFO_ONCE(this->get_logger(), "Timer Callback");
@@ -319,16 +273,16 @@ class KalmanPosNode : public rclcpp::Node
 
                     lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
                 }
-                if ((iROSParamPoseTopic_s == "gps/duro/current_pose") && (iROSParamVehicleType_s == "SZEmission") && (iPositionEstimation_cl.getFiltMeasOri() != INVALID_ORIENTATION)) {
+                if ((iPositionEstimation_cl.getFiltMeasOri() != INVALID_ORIENTATION)) {
                     iPositionEstimation_cl.setMeasuredValuesGNSS(iROSCogPositionMsg_msg.pose.position.x, iROSCogPositionMsg_msg.pose.position.y, iROSCogPositionMsg_msg.pose.position.z, iPositionEstimation_cl.getFiltMeasOri());
                 } else {
                     iPositionEstimation_cl.setMeasuredValuesGNSS(iROSCogPositionMsg_msg.pose.position.x, iROSCogPositionMsg_msg.pose.position.y, iROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
                 }
-                if ((iROSParamImuTopic_s == "gps/duro/imu") || (iROSParamImuTopic_s == "imu/data")) {
+                //if ((iROSParamImuTopic_s == "gps/duro/imu") || (iROSParamImuTopic_s == "imu/data")) {
                     iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, -1*iROSIMUMsg_msg.angular_velocity.z);
-                } else {
-                    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);    
-                }
+                //} else {
+                //    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);    
+                //}
                 iPositionEstimation_cl.setMeasuredValuesVehicleState(iROSVehicleStatusMsg_msg.angular.z*1, iROSVehicleStatusMsg_msg.linear.x*1);
 
                 // TODO no message for driving mode
@@ -339,14 +293,10 @@ class KalmanPosNode : public rclcpp::Node
                 if (lPrevDrivingMode_i32 != iDrivingMode_i32) {
                     lResetEstimation_b = true;
                 }
-                iPositionEstimation_cl.iterateEstimation(iROSParamGnssSource_s,
-                                                        iROSParamEstimationMethod_i32,
-                                                        iROSParamVehicleType_s,
-                                                        iDuroStatusMsgArrived_b,
-                                                        iROSDuroStatusMsg_msg.data,
-                                                        iNovatelStatusMsgArrived_b,
-                                                        iROSNovatelStatusMsg_msg.position_type,
-                                                        lResetEstimation_b);
+                iPositionEstimation_cl.iterateEstimation( iROSParamEstimationMethod_i32,
+                                                          iNavSatFixMsgArrived_b,
+                                                          iROSNavSatFixMsg_msg.status.status,
+                                                          lResetEstimation_b);
                 iPositionEstimation_cl.getModelStates(&lCurrentModelStates_st);
 
                 lAccuracyScaleFactor_d = iPositionEstimation_cl.getAccuracyScaleFactor();
@@ -485,16 +435,6 @@ class KalmanPosNode : public rclcpp::Node
                     iROSParamNavSatFixTopic_s = param.as_string();
                     //iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
                 }
-                if (param.get_name() == "duro_status_string_topic")
-                {
-                    iROSParamDuroStatusStringTopic_s = param.as_string();
-                    iROSSubDuroStatus_cl = this->create_subscription<std_msgs::msg::String>(iROSParamDuroStatusStringTopic_s, 1000, std::bind(&KalmanPosNode::duroStatusStringCallback, this, std::placeholders::_1));
-                }
-                if (param.get_name() == "inspvax_topic")
-                {
-                    iROSParamInspvaxTopic_s = param.as_string();
-                    //iROSSubInspvax_cl = this->create_subscription<std_msgs::msg::String>(iROSParamInspvaxTopic_s, 1000, std::bind(&KalmanPosNode::novatelStatusCallback, this, std::placeholders::_1));
-                }
                 if (param.get_name() == "imu_topic")
                 {
                     iROSParamImuTopic_s = param.as_string();
@@ -525,10 +465,6 @@ class KalmanPosNode : public rclcpp::Node
                     iROSParamEstimatedTravDistEstPos_s = param.as_string();
                     iROSPubEstimatedTraveledDistanceEstPos_cl = this->create_publisher<std_msgs::msg::Float32>(iROSParamEstimatedTravDistEstPos_s, 1000);
                 }
-                if (param.get_name() == "vehicle_type")
-                {
-                    iROSParamVehicleType_s = param.as_string();
-                }
                 if (param.get_name() == "loop_rate_hz")
                 {
                     iROSParamLoopRateHz_i32 = param.as_int();
@@ -539,10 +475,6 @@ class KalmanPosNode : public rclcpp::Node
                 if (param.get_name() == "estimation_method")
                 {
                     iROSParamEstimationMethod_i32 = param.as_int();
-                }
-                if (param.get_name() == "gnss_source")
-                {
-                    iROSParamGnssSource_s = param.as_string();
                 }
                 if (param.get_name() == "dynamic_time_calc")
                 {
