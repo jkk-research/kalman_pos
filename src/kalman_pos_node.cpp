@@ -538,17 +538,8 @@ int main(int argc, char **argv)
     // Initialize ROS node
     rclcpp::init(argc, argv);
     auto lROSNodeHandle_cl = std::make_shared<KalmanPosNode>();
-    rclcpp::Rate lROSLoopRate_cl(lROSNodeHandle_cl->iROSParamLoopRateHz_i32); // 10 Hz
-
     RCLCPP_INFO_ONCE(lROSNodeHandle_cl->get_logger(), "ROS2::START");
-    //ROS_INFO_STREAM("ROS::OK  " << ros::ok());
-
-    //while (rclcpp::ok())
-    //{
-        rclcpp::spin(lROSNodeHandle_cl);
-        rclcpp::shutdown();
-        //rclcpp::spin_some(node);
-        //lROSLoopRate_cl.sleep(lROSNodeHandle_cl);
-    //}
+    rclcpp::spin(lROSNodeHandle_cl);
+    rclcpp::shutdown();
     return 0;
 }
