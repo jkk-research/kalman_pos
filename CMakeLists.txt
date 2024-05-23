@@ -10,7 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(novatel_gps_msgs REQUIRED)
+# find_package(novatel_gps_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -34,14 +34,14 @@ set(INCLUDE_DIRS
   ${sensor_msgs_INCLUDE_DIRS}
   ${nav_msgs_INCLUDE_DIRS}
   ${rclcpp_components_INCLUDE_DIRS}
-  ${novatel_gps_msgs_INCLUDE_DIRS}
+  # ${novatel_gps_msgs_INCLUDE_DIRS}
   ${rcl_interfaces_INCLUDE_DIRS}
   ${tf2_INCLUDE_DIRS}
 )
 include_directories(${INCLUDE_DIRS})
 
 set(ament_dependencies
-  novatel_gps_msgs
+  # novatel_gps_msgs
   rclcpp
   std_msgs
   sensor_msgs

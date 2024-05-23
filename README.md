@@ -23,7 +23,7 @@ cd ~/ros2_ws
 ```
 
 ``` bash
-colcon build --symlink-install --packages-select kalman_pos novatel_gps_msgs
+colcon build --symlink-install --packages-select kalman_pos
 ```
 
 # ROS publications / subscriptions

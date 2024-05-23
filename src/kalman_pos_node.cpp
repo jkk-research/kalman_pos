@@ -7,7 +7,7 @@
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/string.hpp>
-#include <novatel_gps_msgs/msg/inspvax.hpp>
+// #include <novatel_gps_msgs/msg/inspvax.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <tf2/transform_datatypes.h>
@@ -127,9 +127,16 @@ class KalmanPosNode : public rclcpp::Node
                                                     iROSParamKinematicModelMaxSpeed_d);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Set Timer and Timer Callback");
+            double iROSParamLoopRateHz_dbl = static_cast<double>(iROSParamLoopRateHz_i32);
+            int millisec = (1/iROSParamLoopRateHz_dbl) * 1000;
+            
             timer_ = this->create_wall_timer(
-                    std::chrono::milliseconds((1/iROSParamLoopRateHz_i32) * 1000),
+                    std::chrono::milliseconds(millisec),
                     std::bind(&KalmanPosNode::timerCallback, this));
+            
+
+            // RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << (1/iROSParamLoopRateHz_i32) * 1000 << " ms"); // NOK
+            RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << millisec << " ms");
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tPose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tEst. Method: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n", 
                                                     iROSParamPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
@@ -244,6 +251,7 @@ class KalmanPosNode : public rclcpp::Node
         void timerCallback()
         {
             RCLCPP_INFO_ONCE(this->get_logger(), "Timer Callback");
+            // RCLCPP_INFO_STREAM(this->get_logger(), "Pose Msg Arrived: " << iPoseMsgArrived_b);
             visualization_msgs::msg::Marker lROSEstAccuracyMarker_msg;
             geometry_msgs::msg::PoseStamped lROSEstPoseCog_msg;
             geometry_msgs::msg::PoseStamped lROSEstPoseBaselink_msg;
@@ -468,9 +476,12 @@ class KalmanPosNode : public rclcpp::Node
                 if (param.get_name() == "loop_rate_hz")
                 {
                     iROSParamLoopRateHz_i32 = param.as_int();
-                    timer_->cancel();
+                    timer_->cancel(); //
+                    double iROSParamLoopRateHz_dbl = static_cast<double>(iROSParamLoopRateHz_i32);
+                    int millisec = (1/iROSParamLoopRateHz_dbl) * 1000;
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Loop Rate: " << iROSParamLoopRateHz_i32 << " Hz");
                     timer_ = this->create_wall_timer(
-                        std::chrono::milliseconds((1/iROSParamLoopRateHz_i32) * 1000),
+                        std::chrono::milliseconds(millisec),
                         std::bind(&KalmanPosNode::timerCallback, this));
                 }
                 if (param.get_name() == "estimation_method")
