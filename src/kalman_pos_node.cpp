@@ -468,6 +468,7 @@ class KalmanPosNode : public rclcpp::Node
                 if (param.get_name() == "loop_rate_hz")
                 {
                     iROSParamLoopRateHz_i32 = param.as_int();
+                    timer_->cancel();
                     timer_ = this->create_wall_timer(
                         std::chrono::milliseconds((1/iROSParamLoopRateHz_i32) * 1000),
                         std::bind(&KalmanPosNode::timerCallback, this));
