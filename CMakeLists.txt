@@ -75,11 +75,20 @@ target_include_directories(kalman_pos_node PUBLIC
 target_compile_features(kalman_pos_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_link_libraries(kalman_pos_node PositionEstimation)
 
+add_executable(vehicle_status_convert src/VehicleStatusFromSteeringAndSpeed.cpp)
+ament_target_dependencies(vehicle_status_convert  ${ament_dependencies} )
+target_include_directories(vehicle_status_convert PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(vehicle_status_convert PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_link_libraries(vehicle_status_convert PositionEstimation)
+
 install(DIRECTORY 
   launch
   DESTINATION share/${PROJECT_NAME})
 install(TARGETS
   kalman_pos_node
+  vehicle_status_convert
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
