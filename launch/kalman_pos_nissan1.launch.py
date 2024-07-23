@@ -24,12 +24,12 @@ def generate_launch_description():
                 {"kinematic_model_max_speed":0.3},
                 {"do_not_wait_for_gnss_msgs":True},
                 {"msg_timeout":2000.0},
-                {"vehicle_param_c1":3000.0},
-                {"vehicle_param_c2":3000.0},
-                {"vehicle_param_m":180.0},
-                {"vehicle_param_jz":270.0},
-                {"vehicle_param_l1":0.624},
-                {"vehicle_param_l2":0.676},
+                {"vehicle_param_c1":40000.0},
+                {"vehicle_param_c2":24000.0},
+                {"vehicle_param_m":1920.0},
+                {"vehicle_param_jz":2700.0},
+                {"vehicle_param_l1":1.1615},
+                {"vehicle_param_l2":1.5385},
                 {"vehicle_param_swr":1.0}
             ]
         ),
