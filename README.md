@@ -6,7 +6,6 @@ Kálmán filter based `ROS 2` node (`geometry_msgs/PoseStamped`, `sensor_msgs/Im
 
 - [`geometry_msgs/PoseStamped`](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/PoseStamped.html)
 - [`sensor_msgs/Imu`](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/Imu.html)
-- novatel [github.com/jkk-research/novatel_gps_driver](https://github.com/jkk-research/novatel_gps_driver)
 
 ## Build
 
@@ -171,8 +170,16 @@ ros2 launch kalman_pos kalman_pos_node.launch.py
 
 Download: [jkk-research.github.io/dataset](https://jkk-research.github.io/dataset)
 
+Direct download of zipped MCAPs: [download zip (~15 MB)](https://laesze-my.sharepoint.com/:u:/g/personal/herno_o365_sze_hu/EVofDCG_ORZJh--XTVLFsFEBOUYB1eAbHAzdTVDdf19Y9g?download=1)
+
+Make sure you have `unzip` (`sudo apt-get install unzip`) and:
+
+``` powershell
+unzip jkkds02.zip
 ```
-ros2 bag play -l TODO.mcap
+
+``` powershell  
+ros2 bag play nissan_zala_50_zeg_1_0.mcap
 ```
 
 # Cite & paper
