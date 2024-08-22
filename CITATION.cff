@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please consider citing as below."
+authors:
+- family-names: "Enisz"
+  given-names: "Krisztián"
+  orcid: "https://orcid.org/0000-0003-3959-198X"
+- family-names: "Szalay"
+  given-names: "István"
+  orcid: "https://orcid.org/0000-0002-0384-4730"
+- family-names: "Horváth"
+  given-names: "Ernő"
+  orcid: "https://orcid.org/0000-0001-5083-2073"
+title: "Localization robustness improvement for an autonomous race car using multiple extended Kalman filters"
+version: "2024"
+doi: "10.1177/09544070241266281"
+url: "https://github.com/jkk-research/kalman_pos"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Enisz"
+    given-names: "Krisztián"
+    orcid: "https://orcid.org/0000-0003-3959-198X"
+  - family-names: "Szalay"
+    given-names: "István"
+    orcid: "https://orcid.org/0000-0002-0384-4730"
+  - family-names: "Horváth"
+    given-names: "Ernő"
+    orcid: "https://orcid.org/0000-0001-5083-2073"
+  doi: "10.1177/09544070241266281"
+  title: "Localization robustness improvement for an autonomous race car using multiple extended Kalman filters"
+  year: 2024
+  journal: "Proceedings of the Institution of Mechanical Engineers, Part D: Journal of Automobile Engineering"

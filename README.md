@@ -177,15 +177,16 @@ ros2 bag play -l TODO.mcap
 
 # Cite & paper
 
-If you use any of this code please consider citing the [paper TODO]():
+If you use any of this code please consider citing the [paper](https://journals.sagepub.com/eprint/MJGI8JXN8KAWBGZU6D24/full):
 
 ```bibtex
-@Article{2024,
-    title = {TODO},
-    author = {},
-    journal = {},
-    volume = {},
-    url = {},
-    doi = {}
+@Article{doi:10.1177/09544070241266281,
+    title = {Localization robustness improvement for an autonomous race car using multiple extended Kalman filters},
+    author = {Krisztián Enisz and István Szalay and Ernő Horváth},
+    journal = {Proceedings of the Institution of Mechanical Engineers, Part D: Journal of Automobile Engineering},
+    volume = {0},
+    url = {https://doi.org/10.1177/09544070241266281},
+    eprint = {https://doi.org/10.1177/09544070241266281},
+    doi = {10.1177/09544070241266281}
 }
 ```
