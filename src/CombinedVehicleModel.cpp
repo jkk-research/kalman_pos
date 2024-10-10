@@ -233,13 +233,13 @@ void cCombinedVehicleModel::initEKFMatrices(void) {
     iQDynEKFwoGNSS_m(0, 3) = 0;
     iQDynEKFwoGNSS_m(0, 4) = 0;
     iQDynEKFwoGNSS_m(1, 0) = 0;
-    iQDynEKFwoGNSS_m(1, 1) = 1.4821;
+    iQDynEKFwoGNSS_m(1, 1) = 1.4821; // yaw rate
     iQDynEKFwoGNSS_m(1, 2) = 0;
     iQDynEKFwoGNSS_m(1, 3) = 0;
     iQDynEKFwoGNSS_m(1, 4) = 0;
     iQDynEKFwoGNSS_m(2, 0) = 0;
     iQDynEKFwoGNSS_m(2, 1) = 0;
-    iQDynEKFwoGNSS_m(2, 2) = 1.929482792522855e-04;
+    iQDynEKFwoGNSS_m(2, 2) = 1.929482792522855e-04; // yaw angle
     iQDynEKFwoGNSS_m(2, 3) = 0;
     iQDynEKFwoGNSS_m(2, 4) = 0;
     iQDynEKFwoGNSS_m(3, 0) = 0;
@@ -253,11 +253,11 @@ void cCombinedVehicleModel::initEKFMatrices(void) {
     iQDynEKFwoGNSS_m(4, 3) = 0;
     iQDynEKFwoGNSS_m(4, 4) = 1.9060;
 
-    iRDynEKFwoGNSS_m(0, 0) = 3.729484658649690e-04;
+    iRDynEKFwoGNSS_m(0, 0) = 3.729484658649690e-04; // yaw rate
     iRDynEKFwoGNSS_m(0, 1) = 0;
     iRDynEKFwoGNSS_m(0, 2) = 0;
     iRDynEKFwoGNSS_m(1, 0) = 0;
-    iRDynEKFwoGNSS_m(1, 1) = 1.750794749765446; //1.750794749765446;
+    iRDynEKFwoGNSS_m(1, 1) = 1.750794749765446; // yaw angle
     iRDynEKFwoGNSS_m(1, 2) = 0;
     iRDynEKFwoGNSS_m(2, 0) = 0;
     iRDynEKFwoGNSS_m(2, 1) = 0;

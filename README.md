@@ -9,6 +9,12 @@ Kálmán filter based `ROS 2` node (`geometry_msgs/PoseStamped`, `sensor_msgs/Im
 
 ## Build
 
+IMU transformer is a dependency, it might be needed if the IMU is not in the center of gravity (COG)
+
+```
+sudo apt install ros-$ROS_DISTRO-imu-transformer
+```
+
 ``` bash
 cd ~/ros2_ws/src 
 ```
@@ -27,27 +33,36 @@ colcon build --symlink-install --packages-select kalman_pos
 
 # ROS publications / subscriptions
 
+The main node is `kalman_pos_node`, also there is a `vehicle_status_convert` node for converting the vehicle status message to the required format.
+
 ```mermaid
 flowchart LR
 
-A[imu<br/>sensor_msgs/Imu] --> F(kalman_pos)
-B[current_pose<br/>geometry_msgs/PoseStamped] --> F
-C[vehicle_status<br/>geometry_msgs/Twist] --> F
-D[nova_fix<br/>sensor_msgs/NavSatFix] --> F
-E[duro_status<br/>std_msgs/String] --> F
-F -->  G[estimated_pose_cog<br/>geometry_msgs/PoseStamped]
-F -->  H[estimated_pose_baselink<br/>geometry_msgs/PoseStamped]
-F -->  I[distance<br/>std_msgs/Float32]
-F -->  J[estimated_trav_dist_est_pos<br/>std_msgs/Float32]
-F -->  K[estimation_accuracy<br/>visualization_msgs/Marker]
+A[ /imu<br/>sensor_msgs/Imu] --> F(kalman_pos)
+B[ /current_pose<br/>geometry_msgs/PoseStamped] --> F
+C[ /vehicle_status<br/>geometry_msgs/Twist] --> F
+D[ /nova_fix<br/>sensor_msgs/NavSatFix] --> F
+E[ /duro_status<br/>std_msgs/String] --> F
+F -->  G[ /estimated_pose_cog<br/>geometry_msgs/PoseStamped]
+F -->  H[ /estimated_pose_baselink<br/>geometry_msgs/PoseStamped]
+F -->  I[ /distance<br/>std_msgs/Float32]
+F -->  J[ /estimated_trav_dist_est_pos<br/>std_msgs/Float32]
+F -->  K[ /estimation_accuracy<br/>visualization_msgs/Marker]
+
+V1(vehicle_status_convert <br> -optional-) -.-> C
+V3[ /vehicle_speed <br/> std_msgs/Float32] --> V1
+V4[ /vehicle_steering <br/> std_msgs/Float32] --> V1
+
 
 classDef light fill:#34aec5,stroke:#152742,stroke-width:2px,color:#152742  
 classDef dark fill:#152742,stroke:#34aec5,stroke-width:2px,color:#34aec5
 classDef white fill:#ffffff,stroke:#152742,stroke-width:2px,color:#152742
 classDef red fill:#ef4638,stroke:#152742,stroke-width:2px,color:#fff
+classDef dashed fill:#ef4638,stroke:#152742,stroke-width:3px,stroke-dasharray:5,5,color:#fff
 
 class F red
-class A,B,C,D,E,G,H,I,J,K light
+class V1 dashed
+class A,B,C,D,E,G,H,I,J,K,V3,V4 light
 
 ```
 
@@ -180,6 +195,12 @@ unzip jkkds02.zip
 
 ``` powershell  
 ros2 bag play nissan_zala_50_zeg_1_0.mcap
+```
+
+This example bag (mcap) file can be used with:
+
+``` powershell
+ros2 launch kalman_pos kalman_pos_nissan1.launch.py
 ```
 
 # Cite & paper

@@ -14,9 +14,19 @@ class MinimalSubscriber : public rclcpp::Node
 public:
     MinimalSubscriber() : Node("vehicle_status_converter")
     {
-        sub_speed_ = this->create_subscription<std_msgs::msg::Float32>("/nissan/vehicle_speed", 10, std::bind(&MinimalSubscriber::speed_callback, this, _1));
-        sub_steer_ = this->create_subscription<std_msgs::msg::Float32>("/nissan/vehicle_steering", 10, std::bind(&MinimalSubscriber::steer_callback, this, _1));
-        pub_vehicle_status_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/nissan/vehicle_status", 10);
+        this->declare_parameter("speed_topic", "/nissan/vehicle_speed");
+        this->declare_parameter("steer_topic", "/nissan/vehicle_steering");
+        this->declare_parameter("status_topic", "/nissan/vehicle_status");
+
+        this->get_parameter("speed_topic", speed_topic_);
+        this->get_parameter("steer_topic", steer_topic_);
+        this->get_parameter("status_topic", status_topic_);
+
+        sub_speed_ = this->create_subscription<std_msgs::msg::Float32>(speed_topic_, 10, std::bind(&MinimalSubscriber::speed_callback, this, _1)); 
+        sub_steer_ = this->create_subscription<std_msgs::msg::Float32>(steer_topic_, 10, std::bind(&MinimalSubscriber::steer_callback, this, _1));
+        pub_vehicle_status_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(status_topic_, 10);
+        
+        RCLCPP_INFO_STREAM(this->get_logger(), "Subscribed: " << speed_topic_ << " | " << steer_topic_ << " | Publishing: " << status_topic_); 
     }
 
 private:
@@ -36,6 +46,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_steer_, sub_speed_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr pub_vehicle_status_;
     geometry_msgs::msg::TwistStamped vehicle_status_;
+    std::string speed_topic_, steer_topic_, status_topic_;
 };
 
 int main(int argc, char *argv[])
