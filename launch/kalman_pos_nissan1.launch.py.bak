@@ -21,7 +21,7 @@ def generate_launch_description():
                 {"gnss_source":"none"},
                 {"vehicle_type":"nissan"},
                 {"dynamic_time_calc":True},
-                {"kinematic_model_max_speed":3.0},
+                {"kinematic_model_max_speed":10.0},
                 {"do_not_wait_for_gnss_msgs":True},
                 {"msg_timeout":2000.0},
                 {"vehicle_param_c1":30000.0},

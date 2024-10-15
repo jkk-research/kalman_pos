@@ -291,7 +291,7 @@ class KalmanPosNode : public rclcpp::Node
                 //} else {
                 //    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);    
                 //}
-                iPositionEstimation_cl.setMeasuredValuesVehicleState(iROSVehicleStatusMsg_msg.twist.angular.z*1, iROSVehicleStatusMsg_msg.twist.linear.x*1);
+                iPositionEstimation_cl.setMeasuredValuesVehicleState((iROSVehicleStatusMsg_msg.twist.angular.z*3.1416/180), iROSVehicleStatusMsg_msg.twist.linear.x*1);
 
                 // TODO no message for driving mode
                 int32_t lPrevDrivingMode_i32 = iDrivingMode_i32;
@@ -306,7 +306,33 @@ class KalmanPosNode : public rclcpp::Node
                                                           iROSNavSatFixMsg_msg.status.status,
                                                           lResetEstimation_b);
                 iPositionEstimation_cl.getModelStates(&lCurrentModelStates_st);
+/*
+    RCLCPP_INFO_STREAM(this->get_logger(),
+						"--Model EKF w GNSS Beta: " << lCurrentModelStates_st.beta_d <<
+						"  YR: " << lCurrentModelStates_st.yawRate_d << 
+						"  YA: " << lCurrentModelStates_st.yawAngle_d << 
+						"  LA: " << lCurrentModelStates_st.lateralAcceleration_d << 
+						"  X: " << lCurrentModelStates_st.positionX_d << 
+						"  Y: " << lCurrentModelStates_st.positionY_d << 
+						"  VX: " << lCurrentModelStates_st.longitudinalVelocity_d << 
+						"  VY: " << lCurrentModelStates_st.lateralVelocity_d);
 
+
+    RCLCPP_INFO_STREAM(this->get_logger(),
+						"--Mes: " << 
+                        "  X: "<< iROSCogPositionMsg_msg.pose.position.x << 
+                        "  Y: " << iROSCogPositionMsg_msg.pose.position.y << 
+                        "  Z: " << iROSCogPositionMsg_msg.pose.position.z <<
+                        "  yaw: " << lTmpYaw_d <<
+						"  Ax: " << iROSIMUMsg_msg.linear_acceleration.x <<
+                        "  Ay: " << iROSIMUMsg_msg.linear_acceleration.y <<
+                        "  Az: " << iROSIMUMsg_msg.linear_acceleration.z <<
+                        "  AngVx: " << iROSIMUMsg_msg.angular_velocity.x << 
+                        "  AngVy: " << iROSIMUMsg_msg.angular_velocity.y <<
+                        "  AngVz: " << -1*iROSIMUMsg_msg.angular_velocity.z <<
+                        "  SW: " << iROSVehicleStatusMsg_msg.twist.angular.z*3.1416/180 <<
+                        "  Vx: " << iROSVehicleStatusMsg_msg.twist.linear.x*1);
+*/
                 lAccuracyScaleFactor_d = iPositionEstimation_cl.getAccuracyScaleFactor();
 
                 tf2::Quaternion lTmpOrientation_cl;
