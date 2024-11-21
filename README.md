@@ -18,7 +18,13 @@ sudo apt install ros-$ROS_DISTRO-imu-transformer
 ``` bash
 cd ~/ros2_ws/src 
 ```
+> [!CAUTION]
+> If you want the full compatiblity with our [paper](https://journals.sagepub.com/eprint/MJGI8JXN8KAWBGZU6D24/full), please use [release](https://github.com/jkk-research/kalman_pos/releases) version `0.3.0`. Newer releases use modified paramters. Either clone this version:
+> ```
+> git clone https://github.com/jkk-research/kalman_pos --branch v.0.3.0
+> ```
 
+Or clone the latest version:
 ``` bash
 git clone https://github.com/jkk-research/kalman_pos
 ```
