@@ -35,16 +35,19 @@ class KalmanPosNode : public rclcpp::Node
             RCLCPP_INFO_ONCE(this->get_logger(), "Init Variables");
             iDrivingMode_i32 = 0;
             iPrevDrivingMode_i32 = 0;
-            iPoseMsgArrived_b = false;
+            iGNSSPoseMsgArrived_b = false;
+            iSLAMPoseMsgArrived_b = false;
             iNavSatFixMsgArrived_b = false;
             iIMUMsgArrived_b = false;
             iVehicleStatusMsgArrived_b = false;
             iIMUMsgArriveTime_u64 = 0;
             iVehicleStatusMsgArriveTime_u64 = 0;
             iDrivingMode_i32 = 0;
+            iOriEstimationEnabled_b = false;
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Init Parameters");
-            this->declare_parameter<std::string>("pose_topic", "gps/duro/current_pose");
+            this->declare_parameter<std::string>("gnss_pose_topic", "gps/duro/current_pose");
+            this->declare_parameter<std::string>("slam_pose_topic", "gps/duro/current_pose");
             this->declare_parameter<std::string>("vehicle_status_topic", "vehicle_status");
             this->declare_parameter<std::string>("nav_sat_fix_topic", "gps/nova/fix");
             this->declare_parameter<std::string>("imu_topic", "imu/data");
@@ -54,10 +57,15 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<std::string>("est_trav_distance_odom_topic", "distance");
             this->declare_parameter<std::string>("est_trav_distance_est_pos_topic", "estimated_trav_dist_est_pos");
             this->declare_parameter<int>("loop_rate_hz", 60);
-            this->declare_parameter<int>("estimation_method", 6);
+            this->declare_parameter<int>("gnss_available", false);
+            this->declare_parameter<int>("slam_available", false);
+            this->declare_parameter<int>("gnss_accuracy_limit", 10.0);
+            this->declare_parameter<int>("slam_accuracy_limit", 10.0);
             this->declare_parameter<bool>("dynamic_time_calc",  true);
-            this->declare_parameter<bool>("do_not_wait_for_gnss_msgs", true);
+            this->declare_parameter<bool>("do_not_wait_for_pos_msgs", true);
             this->declare_parameter<double>("kinematic_model_max_speed", 0.3);
+            this->declare_parameter<bool>("use_raw_model", false);
+            this->declare_parameter<bool>("orientation_est_enabled", false);
             this->declare_parameter<double>("msg_timeout", 2000);
             this->declare_parameter<double>("vehicle_param_c1", 3000);
             this->declare_parameter<double>("vehicle_param_c2", 3000);
@@ -68,7 +76,8 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<double>("vehicle_param_swr", 1);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Get Parameters");
-            this->get_parameter("pose_topic", iROSParamPoseTopic_s);
+            this->get_parameter("gnss_pose_topic", iROSParamGNSSPoseTopic_s);
+            this->get_parameter("slam_pose_topic", iROSParamSLAMPoseTopic_s);
             this->get_parameter("vehicle_status_topic", iROSParamVehicleStatusTopic_s);
             this->get_parameter("imu_topic", iROSParamImuTopic_s);
             this->get_parameter("est_cog_topic", iROSParamEstimatedPoseCogTopic_s); 
@@ -79,10 +88,15 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("nav_sat_fix_topic", iROSParamNavSatFixTopic_s);
             this->get_parameter("vehicle_status_topic", iROSParamVehicleStatusTopic_s);
             this->get_parameter("dynamic_time_calc", iROSParamDynamicTimeCalcEnabled_b); 
-            this->get_parameter("do_not_wait_for_gnss_msgs", iROSParamDoNotWaitForGnssMsgs_b);
+            this->get_parameter("do_not_wait_for_pos_msgs", iROSParamDoNotWaitForPosMsgs_b);
             this->get_parameter("loop_rate_hz", iROSParamLoopRateHz_i32);
-            this->get_parameter("estimation_method", iROSParamEstimationMethod_i32);
+            this->get_parameter("gnss_available", iROSParamGNSSAvailable_b);
+            this->get_parameter("slam_available", iROSParamSLAMAvailable_b);
+            this->get_parameter("gnss_accuracy_limit", iROSParamGNSSAccuracyLimit_d);
+            this->get_parameter("slam_accuracy_limit", iROSParamSLAMAccuracyLimit_d);
             this->get_parameter("kinematic_model_max_speed", iROSParamKinematicModelMaxSpeed_d);
+            this->get_parameter("use_raw_model", iROSParamUseRawModel_b);
+            this->get_parameter("orientation_est_enabled", iOriEstimationEnabled_b);
             this->get_parameter("msg_timeout", iROSParamMsgTimeout_d);
             this->get_parameter("vehicle_param_c1", iROSParamVehicleParamC1_d);
             this->get_parameter("vehicle_param_c2", iROSParamVehicleParamC2_d);
@@ -93,7 +107,8 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("vehicle_param_swr", iROSParamVehicleParamSWR_d);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Subscriptions");
-            iROSSubPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamPoseTopic_s, 1000, std::bind(&KalmanPosNode::poseCallback, this, std::placeholders::_1));
+            iROSSubGNSSPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamGNSSPoseTopic_s, 1000, std::bind(&KalmanPosNode::gnssPoseCallback, this, std::placeholders::_1));
+            iROSSubSLAMPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamSLAMPoseTopic_s, 1000, std::bind(&KalmanPosNode::slamPoseCallback, this, std::placeholders::_1));
             iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::TwistStamped>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
             iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
             iROSSubIMU_cl = this->create_subscription<sensor_msgs::msg::Imu>(iROSParamImuTopic_s, 1000, std::bind(&KalmanPosNode::imuCallback, this, std::placeholders::_1));
@@ -112,19 +127,20 @@ class KalmanPosNode : public rclcpp::Node
             callback_handle_ = this->add_on_set_parameters_callback(std::bind(&KalmanPosNode::parametersCallback, this, std::placeholders::_1));
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Set Vehicle Parameters");
-            iVehicleParameters_s.c1_d   = iROSParamVehicleParamC1_d;
-            iVehicleParameters_s.c2_d   = iROSParamVehicleParamC2_d;
-            iVehicleParameters_s.m_d    = iROSParamVehicleParamM_d;
-            iVehicleParameters_s.jz_d   = iROSParamVehicleParamJz_d;
-            iVehicleParameters_s.l1_d   = iROSParamVehicleParamL1_d;
-            iVehicleParameters_s.l2_d   = iROSParamVehicleParamL2_d;
-            iVehicleParameters_s.swr_d  = iROSParamVehicleParamSWR_d;
+            iVehicleParameters_s.iC1_d   = iROSParamVehicleParamC1_d;
+            iVehicleParameters_s.iC2_d   = iROSParamVehicleParamC2_d;
+            iVehicleParameters_s.iM_d    = iROSParamVehicleParamM_d;
+            iVehicleParameters_s.iJz_d   = iROSParamVehicleParamJz_d;
+            iVehicleParameters_s.iL1_d   = iROSParamVehicleParamL1_d;
+            iVehicleParameters_s.iL2_d   = iROSParamVehicleParamL2_d;
+            iVehicleParameters_s.iSwr_d  = iROSParamVehicleParamSWR_d;
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Init Estimation");
             iPositionEstimation_cl.initEstimation(  iROSParamDynamicTimeCalcEnabled_b,
                                                     iROSParamLoopRateHz_i32,
                                                     iVehicleParameters_s,
-                                                    iROSParamKinematicModelMaxSpeed_d);
+                                                    iROSParamKinematicModelMaxSpeed_d,
+                                                    iOriEstimationEnabled_b);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Set Timer and Timer Callback");
             double iROSParamLoopRateHz_dbl = static_cast<double>(iROSParamLoopRateHz_i32);
@@ -138,15 +154,16 @@ class KalmanPosNode : public rclcpp::Node
             // RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << (1/iROSParamLoopRateHz_i32) * 1000 << " ms"); // NOK
             RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << millisec << " ms");
 
-            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tPose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tEst. Method: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n", 
-                                                    iROSParamPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
+            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tGNSS Pose Topic: %s\n\tSLAM Pose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tGNSS Available: %d\n\tSLAM Available: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n\tGNSS Accuracy Limit: %f\n\tSLAM Accuracy Limit: %f\n\tUse Raw Model Only: %d\n\tOri. Est. Enabled: %d", 
+                                                    iROSParamGNSSPoseTopic_s.c_str(), iROSParamSLAMPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
                                                     iROSParamNavSatFixTopic_s.c_str(), iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
                                                     iROSParamEstimatedPoseBaselinkTopic_s.c_str(), iROSParamEstimationAccuracyTopic_s.c_str(),
-                                                    iROSParamLoopRateHz_i32, iROSParamEstimationMethod_i32, iROSParamDynamicTimeCalcEnabled_b, 
-                                                    iROSParamDoNotWaitForGnssMsgs_b, iROSParamKinematicModelMaxSpeed_d, iROSParamMsgTimeout_d,
+                                                    iROSParamLoopRateHz_i32, iROSParamGNSSAvailable_b, iROSParamSLAMAvailable_b, iROSParamDynamicTimeCalcEnabled_b, 
+                                                    iROSParamDoNotWaitForPosMsgs_b, iROSParamKinematicModelMaxSpeed_d, iROSParamMsgTimeout_d,
                                                     iROSParamEstimatedTravDistOdom_s.c_str(), iROSParamEstimatedTravDistEstPos_s.c_str(), iROSParamVehicleParamC1_d, 
                                                     iROSParamVehicleParamC2_d, iROSParamVehicleParamM_d, iROSParamVehicleParamJz_d,
-                                                    iROSParamVehicleParamL1_d, iROSParamVehicleParamL2_d, iROSParamVehicleParamSWR_d );
+                                                    iROSParamVehicleParamL1_d, iROSParamVehicleParamL2_d, iROSParamVehicleParamSWR_d,
+                                                    iROSParamGNSSAccuracyLimit_d, iROSParamSLAMAccuracyLimit_d, iROSParamUseRawModel_b, iOriEstimationEnabled_b);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Finalize Initialization");
         }
@@ -155,7 +172,8 @@ class KalmanPosNode : public rclcpp::Node
         int iROSParamLoopRateHz_i32;
     private:
         // Declare ROS parameter variables
-        std::string iROSParamPoseTopic_s;
+        std::string iROSParamGNSSPoseTopic_s;
+        std::string iROSParamSLAMPoseTopic_s;
         std::string iROSParamImuTopic_s;
         std::string iROSParamEstimatedPoseCogTopic_s; 
         std::string iROSParamEstimatedPoseBaselinkTopic_s;
@@ -165,8 +183,12 @@ class KalmanPosNode : public rclcpp::Node
         std::string iROSParamNavSatFixTopic_s;
         std::string iROSParamVehicleStatusTopic_s;
         bool iROSParamDynamicTimeCalcEnabled_b; 
-        bool iROSParamDoNotWaitForGnssMsgs_b;
-        int iROSParamEstimationMethod_i32;
+        bool iROSParamDoNotWaitForPosMsgs_b;
+        bool iROSParamGNSSAvailable_b;
+        bool iROSParamSLAMAvailable_b;
+        bool iROSParamUseRawModel_b;
+        double iROSParamGNSSAccuracyLimit_d;
+        double iROSParamSLAMAccuracyLimit_d;
         double iROSParamKinematicModelMaxSpeed_d;
         double iROSParamMsgTimeout_d;
         double iROSParamVehicleParamC1_d;
@@ -182,7 +204,9 @@ class KalmanPosNode : public rclcpp::Node
 
         int iDrivingMode_i32;
         int iPrevDrivingMode_i32;
-        bool iPoseMsgArrived_b;
+        bool iOriEstimationEnabled_b;
+        bool iGNSSPoseMsgArrived_b;
+        bool iSLAMPoseMsgArrived_b;
         bool iNavSatFixMsgArrived_b;
         bool iIMUMsgArrived_b;
         bool iVehicleStatusMsgArrived_b;
@@ -196,25 +220,36 @@ class KalmanPosNode : public rclcpp::Node
         rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr iROSPubEstimatedTraveledDistanceOdom_cl;
         rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr iROSPubEstimatedTraveledDistanceEstPos_cl;
             
-        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr iROSSubPose_cl;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr iROSSubGNSSPose_cl;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr iROSSubSLAMPose_cl;
         rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubNavSatFix_cl;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr iROSSubIMU_cl;
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr iROSSubVehicleStatus_cl;
 
         std::unique_ptr<tf2_ros::TransformBroadcaster> iEstPosBaselinkTransformBroadcaster_cl;
 
-        geometry_msgs::msg::PoseStamped iROSPositionMsg_msg;
-        geometry_msgs::msg::PoseStamped iROSCogPositionMsg_msg;
+        geometry_msgs::msg::PoseStamped iROSGNSSPositionMsg_msg;
+        geometry_msgs::msg::PoseStamped iROSSLAMPositionMsg_msg;
+        geometry_msgs::msg::PoseStamped iROSGNSSCogPositionMsg_msg;
+        geometry_msgs::msg::PoseStamped iROSSLAMCogPositionMsg_msg;
         sensor_msgs::msg::NavSatFix iROSNavSatFixMsg_msg;
         sensor_msgs::msg::Imu iROSIMUMsg_msg;
         geometry_msgs::msg::TwistStamped iROSVehicleStatusMsg_msg;
 
-        void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
+        void gnssPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
         {
-            RCLCPP_INFO_ONCE(this->get_logger(), "Pose Callback");
-            iPoseMsgArrived_b = true;
-            iROSPositionMsg_msg = *msg;
-            iROSCogPositionMsg_msg = iROSPositionMsg_msg;
+            RCLCPP_INFO_ONCE(this->get_logger(), "GNSS Pose Callback");
+            iGNSSPoseMsgArrived_b = true;
+            iROSGNSSPositionMsg_msg = *msg;
+            iROSGNSSCogPositionMsg_msg = iROSGNSSPositionMsg_msg;
+        }
+
+        void slamPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
+        {
+            RCLCPP_INFO_ONCE(this->get_logger(), "SLAM Pose Callback");
+            iSLAMPoseMsgArrived_b = true;
+            iROSSLAMPositionMsg_msg = *msg;
+            iROSSLAMCogPositionMsg_msg = iROSSLAMPositionMsg_msg;
         }
 
         void navSatFixCallback(const sensor_msgs::msg::NavSatFix::ConstSharedPtr pMsg_msgp)
@@ -265,27 +300,31 @@ class KalmanPosNode : public rclcpp::Node
                 (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
 
-            if ( (((lCurrentTime_u64 - iVehicleStatusMsgArriveTime_u64) < iROSParamMsgTimeout_d) && ((lCurrentTime_u64 - iIMUMsgArriveTime_u64) < iROSParamMsgTimeout_d)) && ((iPoseMsgArrived_b || iROSParamDoNotWaitForGnssMsgs_b) && iIMUMsgArrived_b && iVehicleStatusMsgArrived_b)) {
+            if (  ((lCurrentTime_u64 - iVehicleStatusMsgArriveTime_u64) < iROSParamMsgTimeout_d) &&
+                  ((lCurrentTime_u64 - iIMUMsgArriveTime_u64) < iROSParamMsgTimeout_d) && 
+                  ((iGNSSPoseMsgArrived_b && iROSParamGNSSAvailable_b) || (iSLAMPoseMsgArrived_b && iROSParamSLAMAvailable_b) || (!(iROSParamGNSSAvailable_b || iROSParamSLAMAvailable_b)) || iROSParamDoNotWaitForPosMsgs_b) &&
+                  iIMUMsgArrived_b && iVehicleStatusMsgArrived_b) {
                 sModelStates lCurrentModelStates_st;
                 double lTmpRoll_d = 0;
                 double lTmpPitch_d = 0;
                 double lTmpYaw_d = 0;
 
-                if ( (iROSCogPositionMsg_msg.pose.orientation.x != 0) || (iROSCogPositionMsg_msg.pose.orientation.y != 0) || (iROSCogPositionMsg_msg.pose.orientation.z != 0) || (iROSCogPositionMsg_msg.pose.orientation.w != 0) ) {
+                if ( (iROSGNSSCogPositionMsg_msg.pose.orientation.x != 0) || (iROSGNSSCogPositionMsg_msg.pose.orientation.y != 0) || (iROSGNSSCogPositionMsg_msg.pose.orientation.z != 0) || (iROSGNSSCogPositionMsg_msg.pose.orientation.w != 0) ) {
                     tf2::Quaternion lTmpQuternion_c(
-                        iROSCogPositionMsg_msg.pose.orientation.x,
-                        iROSCogPositionMsg_msg.pose.orientation.y,
-                        iROSCogPositionMsg_msg.pose.orientation.z,
-                        iROSCogPositionMsg_msg.pose.orientation.w);
+                        iROSGNSSCogPositionMsg_msg.pose.orientation.x,
+                        iROSGNSSCogPositionMsg_msg.pose.orientation.y,
+                        iROSGNSSCogPositionMsg_msg.pose.orientation.z,
+                        iROSGNSSCogPositionMsg_msg.pose.orientation.w);
                     tf2::Matrix3x3 lTmpMatrix(lTmpQuternion_c);
 
                     lTmpMatrix.getRPY(lTmpRoll_d, lTmpPitch_d, lTmpYaw_d);
-                }
-                if ((iPositionEstimation_cl.getFiltMeasOri() != INVALID_ORIENTATION)) {
-                    iPositionEstimation_cl.setMeasuredValuesGNSS(iROSCogPositionMsg_msg.pose.position.x, iROSCogPositionMsg_msg.pose.position.y, iROSCogPositionMsg_msg.pose.position.z, iPositionEstimation_cl.getFiltMeasOri());
                 } else {
-                    iPositionEstimation_cl.setMeasuredValuesGNSS(iROSCogPositionMsg_msg.pose.position.x, iROSCogPositionMsg_msg.pose.position.y, iROSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
+                    if ((iPositionEstimation_cl.getFiltMeasOri() != INVALID_ORIENTATION)) {
+                        lTmpYaw_d = iPositionEstimation_cl.getFiltMeasOri();
+                    }
                 }
+                iPositionEstimation_cl.setMeasuredValuesGNSS(iROSGNSSCogPositionMsg_msg.pose.position.x, iROSGNSSCogPositionMsg_msg.pose.position.y, iROSGNSSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
+
                 //if ((iROSParamImuTopic_s == "gps/duro/imu") || (iROSParamImuTopic_s == "imu/data")) {
                     iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, -1*iROSIMUMsg_msg.angular_velocity.z);
                 //} else {
@@ -301,28 +340,46 @@ class KalmanPosNode : public rclcpp::Node
                 if (lPrevDrivingMode_i32 != iDrivingMode_i32) {
                     lResetEstimation_b = true;
                 }
-                iPositionEstimation_cl.iterateEstimation( iROSParamEstimationMethod_i32,
-                                                          iNavSatFixMsgArrived_b,
-                                                          iROSNavSatFixMsg_msg.status.status,
+
+                bool lGNSSavailable_b = iROSParamGNSSAvailable_b && iGNSSPoseMsgArrived_b && iNavSatFixMsgArrived_b;
+                bool lSLAMavailable_b = iROSParamSLAMAvailable_b && iSLAMPoseMsgArrived_b;
+                double lGNSSCovariance_da[3] = {iROSNavSatFixMsg_msg.position_covariance[0], iROSNavSatFixMsg_msg.position_covariance[4], iROSNavSatFixMsg_msg.position_covariance[8]};
+                double lSLAMCovariance_da[3] = {5, 5, 5};
+                if (lGNSSavailable_b) {
+                    if ((lGNSSCovariance_da[0] > iROSParamGNSSAccuracyLimit_d) || (lGNSSCovariance_da[1] > iROSParamGNSSAccuracyLimit_d)) {
+                        lGNSSavailable_b = false;
+                    }
+                }
+                if (lSLAMavailable_b) {
+                    if ((lSLAMCovariance_da[0] > iROSParamSLAMAccuracyLimit_d) || (lSLAMCovariance_da[1] > iROSParamSLAMAccuracyLimit_d)) {
+                        lSLAMavailable_b = false;
+                    }
+                }
+
+                iPositionEstimation_cl.iterateEstimation( iROSParamUseRawModel_b,
+                                                          lGNSSavailable_b,
+                                                          lSLAMavailable_b,
+                                                          lGNSSCovariance_da,
+                                                          lSLAMCovariance_da,
                                                           lResetEstimation_b);
                 iPositionEstimation_cl.getModelStates(&lCurrentModelStates_st);
 /*
     RCLCPP_INFO_STREAM(this->get_logger(),
-						"--Model EKF w GNSS Beta: " << lCurrentModelStates_st.beta_d <<
-						"  YR: " << lCurrentModelStates_st.yawRate_d << 
-						"  YA: " << lCurrentModelStates_st.yawAngle_d << 
-						"  LA: " << lCurrentModelStates_st.lateralAcceleration_d << 
+						"--Model EKF w GNSS Beta: " << lCurrentModelStates_st.iBeta_d <<
+						"  YR: " << lCurrentModelStates_st.iYawRate_d << 
+						"  YA: " << lCurrentModelStates_st.iYawAngle1_d << 
+						"  LA: " << lCurrentModelStates_st.iLateralAcceleration_d << 
 						"  X: " << lCurrentModelStates_st.positionX_d << 
 						"  Y: " << lCurrentModelStates_st.positionY_d << 
-						"  VX: " << lCurrentModelStates_st.longitudinalVelocity_d << 
-						"  VY: " << lCurrentModelStates_st.lateralVelocity_d);
+						"  VX: " << lCurrentModelStates_st.iLongitudinalVelocity_d << 
+						"  VY: " << lCurrentModelStates_st.iLateralVelocity_d);
 
 
     RCLCPP_INFO_STREAM(this->get_logger(),
 						"--Mes: " << 
-                        "  X: "<< iROSCogPositionMsg_msg.pose.position.x << 
-                        "  Y: " << iROSCogPositionMsg_msg.pose.position.y << 
-                        "  Z: " << iROSCogPositionMsg_msg.pose.position.z <<
+                        "  X: "<< iROSGNSSCogPositionMsg_msg.pose.position.x << 
+                        "  Y: " << iROSGNSSCogPositionMsg_msg.pose.position.y << 
+                        "  Z: " << iROSGNSSCogPositionMsg_msg.pose.position.z <<
                         "  yaw: " << lTmpYaw_d <<
 						"  Ax: " << iROSIMUMsg_msg.linear_acceleration.x <<
                         "  Ay: " << iROSIMUMsg_msg.linear_acceleration.y <<
@@ -336,15 +393,15 @@ class KalmanPosNode : public rclcpp::Node
                 lAccuracyScaleFactor_d = iPositionEstimation_cl.getAccuracyScaleFactor();
 
                 tf2::Quaternion lTmpOrientation_cl;
-                lTmpOrientation_cl.setRPY(0, 0, lCurrentModelStates_st.yawAngle_d);
+                lTmpOrientation_cl.setRPY(0, 0, lCurrentModelStates_st.iYawAngle_d);
                 geometry_msgs::msg::Quaternion lTmpOrientationQuatMsg_msg;
                 tf2::convert(lTmpOrientation_cl, lTmpOrientationQuatMsg_msg);
                 lROSEstPoseCog_msg.header.stamp = this->get_clock()->now();
                 lROSEstPoseCog_msg.header.frame_id = "pose_cog";
-                lROSEstPoseCog_msg.pose.position.x = lCurrentModelStates_st.positionX_d;
-                lROSEstPoseCog_msg.pose.position.y = lCurrentModelStates_st.positionY_d;
+                lROSEstPoseCog_msg.pose.position.x = lCurrentModelStates_st.iPositionX_d;
+                lROSEstPoseCog_msg.pose.position.y = lCurrentModelStates_st.iPositionY_d;
                 lROSEstPoseCog_msg.pose.position.z = 0;
-                //lROSEstPoseCog_msg.pose.orientation = tf2::createQuaternionMsgFromRollPitchYaw(0, 0, lCurrentModelStates_st.yawAngle_d);
+                //lROSEstPoseCog_msg.pose.orientation = tf2::createQuaternionMsgFromRollPitchYaw(0, 0, lCurrentModelStates_st.iYawAngle1_d);
                 lROSEstPoseCog_msg.pose.orientation = lTmpOrientationQuatMsg_msg;
             } else {
                 tf2::Quaternion lTmpOrientation_cl;
@@ -454,10 +511,15 @@ class KalmanPosNode : public rclcpp::Node
             for (const auto &param : parameters)
             {
                 RCLCPP_INFO_STREAM(this->get_logger(), "Param update: " << param.get_name().c_str() << ": " << param.value_to_string().c_str());
-                if (param.get_name() == "pose_topic")
+                if (param.get_name() == "gnss_pose_topic")
                 {
-                    iROSParamPoseTopic_s = param.as_string();;
-                    iROSSubPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamPoseTopic_s, 1000, std::bind(&KalmanPosNode::poseCallback, this, std::placeholders::_1));
+                    iROSParamGNSSPoseTopic_s = param.as_string();;
+                    iROSSubGNSSPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamGNSSPoseTopic_s, 1000, std::bind(&KalmanPosNode::gnssPoseCallback, this, std::placeholders::_1));
+                }
+                if (param.get_name() == "slam_pose_topic")
+                {
+                    iROSParamSLAMPoseTopic_s = param.as_string();;
+                    iROSSubSLAMPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamSLAMPoseTopic_s, 1000, std::bind(&KalmanPosNode::slamPoseCallback, this, std::placeholders::_1));
                 }
                 if (param.get_name() == "vehicle_status_topic")
                 {
@@ -510,9 +572,29 @@ class KalmanPosNode : public rclcpp::Node
                         std::chrono::milliseconds(millisec),
                         std::bind(&KalmanPosNode::timerCallback, this));
                 }
-                if (param.get_name() == "estimation_method")
+                if (param.get_name() == "gnss_available")
                 {
-                    iROSParamEstimationMethod_i32 = param.as_int();
+                    iROSParamGNSSAvailable_b = param.as_bool();
+                }
+                if (param.get_name() == "slam_available")
+                {
+                    iROSParamSLAMAvailable_b = param.as_bool();
+                }
+                if (param.get_name() == "gnss_accuracy_limit")
+                {
+                    iROSParamGNSSAccuracyLimit_d = param.as_double();
+                }
+                if (param.get_name() == "slam_accuracy_limit")
+                {
+                    iROSParamSLAMAccuracyLimit_d = param.as_double();
+                }
+                if (param.get_name() == "use_raw_model")
+                {
+                    iROSParamUseRawModel_b = param.as_bool();
+                }
+                if (param.get_name() == "orientation_est_enabled")
+                {
+                    iOriEstimationEnabled_b = param.as_bool();
                 }
                 if (param.get_name() == "dynamic_time_calc")
                 {
@@ -520,7 +602,7 @@ class KalmanPosNode : public rclcpp::Node
                 }
                 if (param.get_name() == "do_not_wait_for_gnss_msgs")
                 {
-                    iROSParamDoNotWaitForGnssMsgs_b = param.as_bool();
+                    iROSParamDoNotWaitForPosMsgs_b = param.as_bool();
                 }
                 if (param.get_name() == "kinematic_model_max_speed")
                 {

@@ -8,24 +8,27 @@ cPositionEstimation::cPositionEstimation() {
 
 }
 
-cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f) {
-    initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleParameters_s, pKinematicModelMaxSpeed_f );
+cPositionEstimation::cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f, bool pOriEstimationEnabled_b) {
+    initEstimation( pDynamicTimeCalcEnabled_b, pLoopRateHz_i32, pVehicleParameters_s, pKinematicModelMaxSpeed_f, pOriEstimationEnabled_b);
 }
 
 cPositionEstimation::~cPositionEstimation() {
 
 }
 
-void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f ) {
+void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f, bool pOriEstimationEnabled_b ) {
     iFirstIteration_b = true;
     iLoopRateHz_i32 = pLoopRateHz_i32;
     iTs_d = 1 / iLoopRateHz_i32;
     iDynamicTimeCalcEnabled_b = pDynamicTimeCalcEnabled_b;
     iPrevMillisecondsSinceEpoch_u64 = 0;
     iMillisecondsSinceEpoch_u64 = 0;
+    iOriEstimationEnabled_b = pOriEstimationEnabled_b;
 
-    iPrevMeasPosX_d = 0;
-    iPrevMeasPosY_d = 0;
+    iPrevGNSSMeasPosX_d = 0;
+    iAccuracyScaleFactor_d = 0;
+    iPrevSLAMMeasPosX_d = 0;
+    iPrevSLAMMeasPosY_d = 0;
     iPrevEstPosX_d = 0;
     iPrevEstPosY_d = 0;
 
@@ -35,13 +38,13 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     iTravDistanceEstPos_d = 0;
 
     sVehicleParameters lVehicleParameters_s;
-    lVehicleParameters_s.c1_d   = 3000;//4000;
-    lVehicleParameters_s.c2_d   = 800;//2400; // The ratio is very important!!!!!
-    lVehicleParameters_s.m_d    = 180;
-    lVehicleParameters_s.jz_d   = 270;
-    lVehicleParameters_s.l1_d   = 1.3 - 0.976;
-    lVehicleParameters_s.l2_d   = 0.976;
-    lVehicleParameters_s.swr_d  = 1;
+    lVehicleParameters_s.iC1_d   = 3000;//4000;
+    lVehicleParameters_s.iC2_d   = 800;//2400; // The ratio is very important!!!!!
+    lVehicleParameters_s.iM_d    = 180;
+    lVehicleParameters_s.iJz_d   = 270;
+    lVehicleParameters_s.iL1_d   = 1.3 - 0.976;
+    lVehicleParameters_s.iL2_d   = 0.976;
+    lVehicleParameters_s.iSwr_d  = 1;
 
     iCombinedVehicleModel_cl = cCombinedVehicleModel(lVehicleParameters_s);
     iCombinedVehicleModel_cl.initVehicleParameters(pVehicleParameters_s);
@@ -50,8 +53,6 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     iKinSpeedLimit_d = pKinematicModelMaxSpeed_f;
     iDefaultKinSpeedLimit_d = pKinematicModelMaxSpeed_f;
 
-    iEstimationMode_e = eEstimationMode::ekf;
-    iGNSSState_e = eGNSSState::off;
     iAccuracyScaleFactor_d = 10;
 }
 
@@ -63,109 +64,12 @@ void cPositionEstimation::setMeasuredValuesGNSS(double pPositionX_d, double pPos
     iCombinedVehicleModel_cl.setMeasuredValuesGNSS(pPositionX_d, pPositionY_d, pPositionZ_d, pYawAngle_d);
 }
 
-void cPositionEstimation::setMeasuredValuesIMU(double pLongitudinalAcceleration_d, double pLateralAcceleration_d, double pVerticalAcceleration_d, double pRollRate_d, double pPitchRate_d, double pYawRate_d) {
-    iCombinedVehicleModel_cl.setMeasuredValuesIMU(pLongitudinalAcceleration_d, pLateralAcceleration_d, pVerticalAcceleration_d, pRollRate_d, pPitchRate_d, pYawRate_d);
+void cPositionEstimation::setMeasuredValuesSLAM(double pPositionX_d, double pPositionY_d, double pPositionZ_d, double pYawAngle_d){
+    iCombinedVehicleModel_cl.setMeasuredValuesSLAM(pPositionX_d, pPositionY_d, pPositionZ_d, pYawAngle_d);
 }
 
-void cPositionEstimation::selectEstimationMode(int pEstimationMethod_i32, bool pGNSSStatusMsgArrived_b, int8_t pGNSSState_i8){
-    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-    iAccuracyScaleFactor_d = 10;
-    iGNSSState_e = eGNSSState::off;
-    iEstimationMode_e = eEstimationMode::model;
-
-    switch (pEstimationMethod_i32) {
-        case 0: // Kinematic model without EKF and without GNSS
-                iKinSpeedLimit_d = 200;
-            break;
-        case 1: // Kinematic + dynamic model without EKF and without GNSS
-            break;
-        case 2: // Kinematic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
-                if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    iKinSpeedLimit_d = 200;
-                } else {
-                    if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                    }
-                    iKinSpeedLimit_d = 200;
-                }
-                iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-            break;
-        case 3: // Kinematic + dynamic model without EKF and without GNSS but with yaw rate calculation on startup (based on GNSS) 
-                if (iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                    }
-                }
-                iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-            break;
-        case 5: // Kinematic model with EKF and without GNSS
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                iKinSpeedLimit_d = 200;
-            break;
-        case 6: // Kinematic + dynaicmodel with EKF and without GNSS
-                iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-            break;
-        case 7: // Kinematic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
-                if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iKinSpeedLimit_d = 200;
-                } else {
-                    if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                    }
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iKinSpeedLimit_d = 200;
-                }
-                iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-            break;
-        case 8: // Kinematic + dynamic model with EKF and without GNSS but with yaw rate calculation on startup (based on GNSS)
-                if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                } else {
-                    if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                    }
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                }
-                iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-            break;
-        case 9: // Kinematic + dynamic model with EKF and without GNSS position but with yaw rate calculation (based on GNSS)
-                if (!iOrientationEstimation_cl.iOrientationIsValid_b) {
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::SBAS;
-                } else {
-                    if (!iPrevOrientationIsValid_b) {
-                        iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                    }
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    iGNSSState_e = eGNSSState::SBAS;
-                }
-                iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-            break;
-        case 10: 
-                if ((!pGNSSStatusMsgArrived_b)){
-                    iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    if (iOrientationEstimation_cl.iOrientationIsValid_b) {
-                        if (!iPrevOrientationIsValid_b) {
-                            iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
-                        }
-                    }
-                    iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
-                    break;
-                } else {
-                    iKinSpeedLimit_d = iDefaultKinSpeedLimit_d;
-                    if (pGNSSState_i8 < 2) {
-                        iEstimationMode_e = eEstimationMode::ekf_ekf_wognss;
-                    } else {
-                        iEstimationMode_e = eEstimationMode::ekf;
-                        iGNSSState_e = eGNSSState::rtk_fixed;
-                        iAccuracyScaleFactor_d = 1;
-                    } 
-                }
-            break;
-        default:
-            break;
-    }
+void cPositionEstimation::setMeasuredValuesIMU(double pLongitudinalAcceleration_d, double pLateralAcceleration_d, double pVerticalAcceleration_d, double pRollRate_d, double pPitchRate_d, double pYawRate_d) {
+    iCombinedVehicleModel_cl.setMeasuredValuesIMU(pLongitudinalAcceleration_d, pLateralAcceleration_d, pVerticalAcceleration_d, pRollRate_d, pPitchRate_d, pYawRate_d);
 }
 
 void cPositionEstimation::cycleTimeCalculation(void) {
@@ -194,91 +98,123 @@ void cPositionEstimation::traveledDistanceCalculation(void) {
     iCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_st);
     iCombinedVehicleModel_cl.getPrevModelStates(&lPrevModelStates_st);
 
-    double lXDiff_d = lCurrentModelStates_st.positionX_d - lPrevModelStates_st.positionX_d;
-    double lYDiff_d = lCurrentModelStates_st.positionY_d - lPrevModelStates_st.positionY_d;
+    double lXDiff_d = lCurrentModelStates_st.iPositionX_d - lPrevModelStates_st.iPositionX_d;
+    double lYDiff_d = lCurrentModelStates_st.iPositionY_d - lPrevModelStates_st.iPositionY_d;
 
     if ((abs(lXDiff_d) < 200) && (abs(lYDiff_d) < 200)) {
         iTravDistanceEstPos_d = iTravDistanceEstPos_d + sqrtf64((lXDiff_d * lXDiff_d) + (lYDiff_d * lYDiff_d));
     }
 
-    iTravDistanceOdom_d = iTravDistanceOdom_d + iTs_d * abs(iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d);   
+    iTravDistanceOdom_d = iTravDistanceOdom_d + iTs_d * abs(iCombinedVehicleModel_cl.iMeasuredValues_s.iVehicleSpeed_d);   
 }
     
-void cPositionEstimation::iterateEstimation(int pEstimationMethod_i32, bool pGNSSStatusMsgArrived_b, int8_t pGNSSState_i8, bool pReset_b){
+void cPositionEstimation::iterateEstimation(bool pUseRawModel_b, bool pGNSSAvailable_b, bool pSLAMAvailable_b, double pGNSSCovariance_da[3], double pSLAMCovariance_da[3], bool pReset_b){
     if (iFirstIteration_b || pReset_b) {
         iCombinedVehicleModel_cl.initEKFMatrices();
         iCombinedVehicleModel_cl.setPrevEKFMatrices();
         iCombinedVehicleModel_cl.setPrevMeasuredValues();
+        iCombinedVehicleModel_cl.setPositionCovariance(pGNSSCovariance_da[0], pGNSSCovariance_da[1], pSLAMCovariance_da[0], pSLAMCovariance_da[1]);
 
-        switch (pEstimationMethod_i32) {
-            case 2:
-            case 3:
-            case 7:
-            case 8:
-            case 10:
-                    iCombinedVehicleModel_cl.setModelStates(0, 
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.yawRate_d,  
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.yawAngle_d, 
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.lateralAcceleration_d,
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d,
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d,
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d,
-                                                0);
-                break;
-            case 0:
-            case 1:
-            case 4:
-            case 5:
-            case 6:
-            case 9:
-            default:
-                    iCombinedVehicleModel_cl.setModelStates(0, 
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.yawRate_d,  
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.yawAngle_d, 
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.lateralAcceleration_d,
-                                                0,
-                                                0,
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d,
-                                                0);
-                break;
-
-        };
+        if (pGNSSAvailable_b) {
+            iCombinedVehicleModel_cl.setModelStates(0, 
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iYawRate_d,  
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iYawAngle1_d, 
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iLateralAcceleration_d,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iVehicleSpeed_d,
+                0);
+            iPrevGNSSMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d;
+            iPrevGNSSMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d;
+            iPrevSLAMMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d;
+            iPrevSLAMMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d;
+            iPrevEstPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d;
+            iPrevEstPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d;
+        } else if (pSLAMAvailable_b) {
+            iCombinedVehicleModel_cl.setModelStates(0, 
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iYawRate_d,  
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iYawAngle1_d, 
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iLateralAcceleration_d,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iVehicleSpeed_d,
+                0);
+            iPrevGNSSMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d;
+            iPrevGNSSMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d;
+            iPrevSLAMMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d;
+            iPrevSLAMMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d;
+            iPrevEstPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d;
+            iPrevEstPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d;
+        } else {
+            iCombinedVehicleModel_cl.setModelStates(0, 
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iYawRate_d,  
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iYawAngle1_d, 
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iLateralAcceleration_d,
+                0,
+                0,
+                iCombinedVehicleModel_cl.iMeasuredValues_s.iVehicleSpeed_d,
+                0);
+            iPrevGNSSMeasPosX_d = 0;
+            iPrevGNSSMeasPosY_d = 0;
+            iPrevSLAMMeasPosX_d = 0;
+            iPrevSLAMMeasPosY_d = 0;
+            iPrevEstPosX_d = 0;
+            iPrevEstPosY_d = 0;
+        }
 
         iFirstIteration_b = false;
-
-        iPrevMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
-        iPrevMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
-        iPrevEstPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
-        iPrevEstPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
     }
 
-    selectEstimationMode(pEstimationMethod_i32, pGNSSStatusMsgArrived_b, pGNSSState_i8);
-       
+    if (iOriEstimationEnabled_b) {
+        if (iOrientationEstimation_cl.iOrientationIsValid_b) {
+            if (!iPrevOrientationIsValid_b) {
+                iCombinedVehicleModel_cl.setYawAngleStates(iOrientationEstimation_cl.iFiltMeasOri_d);
+            }
+        }
+        iPrevOrientationIsValid_b = iOrientationEstimation_cl.iOrientationIsValid_b;
+    }
+
     cycleTimeCalculation();
 
     traveledDistanceCalculation();
 
-    iCombinedVehicleModel_cl.iterateModel(iTs_d, iEstimationMode_e, iGNSSState_e, iKinSpeedLimit_d);
+    iCombinedVehicleModel_cl.iterateModel(iTs_d, pUseRawModel_b, pGNSSAvailable_b, pSLAMAvailable_b, iKinSpeedLimit_d);
     
     sModelStates lCurrentModelStates_st;
     iCombinedVehicleModel_cl.getModelStates(&lCurrentModelStates_st);
 
-    if ( (iCombinedVehicleModel_cl.iMeasuredValues_s.vehicleSpeed_d > 0.1) &&
-            (iPrevMeasPosX_d != iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d) &&
-            (iPrevMeasPosY_d != iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d) &&
-            (iPrevEstPosX_d != lCurrentModelStates_st.positionX_d) &&
-            (iPrevEstPosY_d != lCurrentModelStates_st.positionY_d)) {
+    if (pGNSSAvailable_b) {
+        if ( (iCombinedVehicleModel_cl.iMeasuredValues_s.iVehicleSpeed_d > 0.1) &&
+                (iPrevGNSSMeasPosX_d != iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d) &&
+                (iPrevGNSSMeasPosY_d != iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d) &&
+                (iPrevEstPosX_d != lCurrentModelStates_st.iPositionX_d) &&
+                (iPrevEstPosY_d != lCurrentModelStates_st.iPositionY_d)) {
 
-        iOrientationEstimation_cl.addPosition(  iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d, 
-                                                iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d, 
-                                                lCurrentModelStates_st.positionX_d, 
-                                                lCurrentModelStates_st.positionY_d);
+            iOrientationEstimation_cl.addPosition(  iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d, 
+                                                    iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d, 
+                                                    lCurrentModelStates_st.iPositionX_d, 
+                                                    lCurrentModelStates_st.iPositionY_d);
+        }
+    } else if (pSLAMAvailable_b) {
+        if ( (iCombinedVehicleModel_cl.iMeasuredValues_s.iVehicleSpeed_d > 0.1) &&
+            (iPrevSLAMMeasPosX_d != iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d) &&
+            (iPrevSLAMMeasPosY_d != iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d) &&
+            (iPrevEstPosX_d != lCurrentModelStates_st.iPositionX_d) &&
+            (iPrevEstPosY_d != lCurrentModelStates_st.iPositionY_d)) {
+
+        iOrientationEstimation_cl.addPosition(  iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d, 
+                                                iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d, 
+                                                lCurrentModelStates_st.iPositionX_d, 
+                                                lCurrentModelStates_st.iPositionY_d);
+        }
     }
 
-    iPrevMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionX_d;
-    iPrevMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.positionY_d;
-    iPrevEstPosX_d = lCurrentModelStates_st.positionX_d;
-    iPrevEstPosY_d = lCurrentModelStates_st.positionY_d;        
+    iPrevGNSSMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1X_d;
+    iPrevGNSSMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition1Y_d;
+    iPrevSLAMMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d;
+    iPrevSLAMMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d;
+    iPrevEstPosX_d = lCurrentModelStates_st.iPositionX_d;
+    iPrevEstPosY_d = lCurrentModelStates_st.iPositionY_d;        
 }
 
 void cPositionEstimation::getModelStates(sModelStates* pOutModelStates_s) {
@@ -286,7 +222,7 @@ void cPositionEstimation::getModelStates(sModelStates* pOutModelStates_s) {
 }
 
 double cPositionEstimation::getCogDistanceFromBaselinkX(void) {
-    return iCombinedVehicleModel_cl.iVehicleParameters_s.l2_d;
+    return iCombinedVehicleModel_cl.iVehicleParameters_s.iL2_d;
 }
 
 double cPositionEstimation::getCogDistanceFromBaselinkY(void) {
