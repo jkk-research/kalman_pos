@@ -1,6 +1,7 @@
 #include "PositionEstimation.h"
 
 #include <sys/time.h>
+#include <algorithm> 
 #include <boost/date_time/posix_time/ptime.hpp>
 #include "tf2/transform_datatypes.h"
 
@@ -17,6 +18,7 @@ cPositionEstimation::~cPositionEstimation() {
 }
 
 void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f, bool pOriEstimationEnabled_b ) {
+    std::cout << "initEstimation\n";
     iFirstIteration_b = true;
     iLoopRateHz_i32 = pLoopRateHz_i32;
     iTs_d = 1 / iLoopRateHz_i32;
@@ -53,7 +55,7 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     iKinSpeedLimit_d = pKinematicModelMaxSpeed_f;
     iDefaultKinSpeedLimit_d = pKinematicModelMaxSpeed_f;
 
-    iAccuracyScaleFactor_d = 10;
+    iAccuracyScaleFactor_d = 20;
 }
 
 void cPositionEstimation::setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d) {
@@ -214,7 +216,17 @@ void cPositionEstimation::iterateEstimation(bool pUseRawModel_b, bool pGNSSAvail
     iPrevSLAMMeasPosX_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2X_d;
     iPrevSLAMMeasPosY_d = iCombinedVehicleModel_cl.iMeasuredValues_s.iPosition2Y_d;
     iPrevEstPosX_d = lCurrentModelStates_st.iPositionX_d;
-    iPrevEstPosY_d = lCurrentModelStates_st.iPositionY_d;        
+    iPrevEstPosY_d = lCurrentModelStates_st.iPositionY_d; 
+
+    iAccuracyScaleFactor_d = 20;
+    if (pGNSSAvailable_b) {
+        iAccuracyScaleFactor_d = std::max((double)iAccuracyScaleFactor_d, pGNSSCovariance_da[0]);
+        iAccuracyScaleFactor_d = std::max((double)iAccuracyScaleFactor_d, pGNSSCovariance_da[1]);
+    }
+    if (pGNSSAvailable_b) {
+        iAccuracyScaleFactor_d = std::max((double)iAccuracyScaleFactor_d, pSLAMCovariance_da[0]);
+        iAccuracyScaleFactor_d = std::max((double)iAccuracyScaleFactor_d, pSLAMCovariance_da[1]);
+    }
 }
 
 void cPositionEstimation::getModelStates(sModelStates* pOutModelStates_s) {

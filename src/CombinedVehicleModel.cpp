@@ -43,10 +43,10 @@ void cCombinedVehicleModel::initEKFMatrices(void) {
 
     iPDyn_wEKFwExtPos1Pos2_m = matrix<double>(5, 5);
     iQDyn_wEKFwExtPos1Pos2_m = matrix<double>(5, 5);
-    iRDyn_wEKFwExtPos1Pos2_m = matrix<double>(5, 5);
+    iRDyn_wEKFwExtPos1Pos2_m = matrix<double>(7, 7);
     iPKin_wEKFwExtPos1Pos2_m = matrix<double>(5, 5);
     iQKin_wEKFwExtPos1Pos2_m = matrix<double>(5, 5);
-    iRKin_wEKFwExtPos1Pos2_m = matrix<double>(5, 5);
+    iRKin_wEKFwExtPos1Pos2_m = matrix<double>(7, 7);
 
     iPDyn_wEKFwoExtPos_m = matrix<double>(5, 5);
     iQDyn_wEKFwoExtPos_m = matrix<double>(5, 5);

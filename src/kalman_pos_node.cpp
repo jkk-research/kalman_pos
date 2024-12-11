@@ -37,7 +37,8 @@ class KalmanPosNode : public rclcpp::Node
             iPrevDrivingMode_i32 = 0;
             iGNSSPoseMsgArrived_b = false;
             iSLAMPoseMsgArrived_b = false;
-            iNavSatFixMsgArrived_b = false;
+            iGNSSCovarianceMsgArrived_b = false;
+            iSLAMCovarianceMsgArrived_b = false;
             iIMUMsgArrived_b = false;
             iVehicleStatusMsgArrived_b = false;
             iIMUMsgArriveTime_u64 = 0;
@@ -49,7 +50,8 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<std::string>("gnss_pose_topic", "gps/duro/current_pose");
             this->declare_parameter<std::string>("slam_pose_topic", "gps/duro/current_pose");
             this->declare_parameter<std::string>("vehicle_status_topic", "vehicle_status");
-            this->declare_parameter<std::string>("nav_sat_fix_topic", "gps/nova/fix");
+            this->declare_parameter<std::string>("gnss_covariance_topic", "gps/duro/fix");
+            this->declare_parameter<std::string>("slam_covariance_topic", "gps/duro/fix");
             this->declare_parameter<std::string>("imu_topic", "imu/data");
             this->declare_parameter<std::string>("est_cog_topic", "estimated_pose_cog");
             this->declare_parameter<std::string>("est_baselink_topic", "estimated_pose_baselink");
@@ -57,10 +59,12 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<std::string>("est_trav_distance_odom_topic", "distance");
             this->declare_parameter<std::string>("est_trav_distance_est_pos_topic", "estimated_trav_dist_est_pos");
             this->declare_parameter<int>("loop_rate_hz", 60);
-            this->declare_parameter<int>("gnss_available", false);
-            this->declare_parameter<int>("slam_available", false);
-            this->declare_parameter<int>("gnss_accuracy_limit", 10.0);
-            this->declare_parameter<int>("slam_accuracy_limit", 10.0);
+            this->declare_parameter<bool>("gnss_available", false);
+            this->declare_parameter<bool>("slam_available", false);
+            this->declare_parameter<float>("gnss_accuracy_limit", 10.0);
+            this->declare_parameter<float>("slam_accuracy_limit", 10.0);
+            this->declare_parameter<float>("gnss_default_covariance", 15.0);
+            this->declare_parameter<float>("slam_default_covariance", 15.0); 
             this->declare_parameter<bool>("dynamic_time_calc",  true);
             this->declare_parameter<bool>("do_not_wait_for_pos_msgs", true);
             this->declare_parameter<double>("kinematic_model_max_speed", 0.3);
@@ -85,7 +89,8 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("est_trav_distance_odom_topic", iROSParamEstimatedTravDistOdom_s);
             this->get_parameter("est_trav_distance_est_pos_topic", iROSParamEstimatedTravDistEstPos_s);
             this->get_parameter("est_accuracy_topic", iROSParamEstimationAccuracyTopic_s);
-            this->get_parameter("nav_sat_fix_topic", iROSParamNavSatFixTopic_s);
+            this->get_parameter("gnss_covariance_topic", iROSParamGNSSCovarianceTopic_s);
+            this->get_parameter("slam_covariance_topic", iROSParamSLAMCovarianceTopic_s);
             this->get_parameter("vehicle_status_topic", iROSParamVehicleStatusTopic_s);
             this->get_parameter("dynamic_time_calc", iROSParamDynamicTimeCalcEnabled_b); 
             this->get_parameter("do_not_wait_for_pos_msgs", iROSParamDoNotWaitForPosMsgs_b);
@@ -94,6 +99,8 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("slam_available", iROSParamSLAMAvailable_b);
             this->get_parameter("gnss_accuracy_limit", iROSParamGNSSAccuracyLimit_d);
             this->get_parameter("slam_accuracy_limit", iROSParamSLAMAccuracyLimit_d);
+            this->get_parameter("gnss_default_covariance", iROSParamGNSSDefaultCovariance_d);
+            this->get_parameter("slam_default_covariance", iROSParamSLAMDefaultCovariance_d);
             this->get_parameter("kinematic_model_max_speed", iROSParamKinematicModelMaxSpeed_d);
             this->get_parameter("use_raw_model", iROSParamUseRawModel_b);
             this->get_parameter("orientation_est_enabled", iOriEstimationEnabled_b);
@@ -110,7 +117,8 @@ class KalmanPosNode : public rclcpp::Node
             iROSSubGNSSPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamGNSSPoseTopic_s, 1000, std::bind(&KalmanPosNode::gnssPoseCallback, this, std::placeholders::_1));
             iROSSubSLAMPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamSLAMPoseTopic_s, 1000, std::bind(&KalmanPosNode::slamPoseCallback, this, std::placeholders::_1));
             iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::TwistStamped>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
-            iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
+            iROSSubGNSSCovariance_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamGNSSCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::gnssCovarianceCallback, this, std::placeholders::_1));
+            iROSSubSLAMCovariance_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamSLAMCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::slamCovarianceCallback, this, std::placeholders::_1));
             iROSSubIMU_cl = this->create_subscription<sensor_msgs::msg::Imu>(iROSParamImuTopic_s, 1000, std::bind(&KalmanPosNode::imuCallback, this, std::placeholders::_1));
             
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Publisher");
@@ -156,7 +164,7 @@ class KalmanPosNode : public rclcpp::Node
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tGNSS Pose Topic: %s\n\tSLAM Pose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tGNSS Available: %d\n\tSLAM Available: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n\tGNSS Accuracy Limit: %f\n\tSLAM Accuracy Limit: %f\n\tUse Raw Model Only: %d\n\tOri. Est. Enabled: %d", 
                                                     iROSParamGNSSPoseTopic_s.c_str(), iROSParamSLAMPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
-                                                    iROSParamNavSatFixTopic_s.c_str(), iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
+                                                    iROSParamGNSSCovarianceTopic_s.c_str(), iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
                                                     iROSParamEstimatedPoseBaselinkTopic_s.c_str(), iROSParamEstimationAccuracyTopic_s.c_str(),
                                                     iROSParamLoopRateHz_i32, iROSParamGNSSAvailable_b, iROSParamSLAMAvailable_b, iROSParamDynamicTimeCalcEnabled_b, 
                                                     iROSParamDoNotWaitForPosMsgs_b, iROSParamKinematicModelMaxSpeed_d, iROSParamMsgTimeout_d,
@@ -180,7 +188,8 @@ class KalmanPosNode : public rclcpp::Node
         std::string iROSParamEstimatedTravDistOdom_s;
         std::string iROSParamEstimatedTravDistEstPos_s;
         std::string iROSParamEstimationAccuracyTopic_s;
-        std::string iROSParamNavSatFixTopic_s;
+        std::string iROSParamGNSSCovarianceTopic_s;
+        std::string iROSParamSLAMCovarianceTopic_s;
         std::string iROSParamVehicleStatusTopic_s;
         bool iROSParamDynamicTimeCalcEnabled_b; 
         bool iROSParamDoNotWaitForPosMsgs_b;
@@ -189,6 +198,8 @@ class KalmanPosNode : public rclcpp::Node
         bool iROSParamUseRawModel_b;
         double iROSParamGNSSAccuracyLimit_d;
         double iROSParamSLAMAccuracyLimit_d;
+        double iROSParamGNSSDefaultCovariance_d;
+        double iROSParamSLAMDefaultCovariance_d;
         double iROSParamKinematicModelMaxSpeed_d;
         double iROSParamMsgTimeout_d;
         double iROSParamVehicleParamC1_d;
@@ -207,13 +218,13 @@ class KalmanPosNode : public rclcpp::Node
         bool iOriEstimationEnabled_b;
         bool iGNSSPoseMsgArrived_b;
         bool iSLAMPoseMsgArrived_b;
-        bool iNavSatFixMsgArrived_b;
+        bool iGNSSCovarianceMsgArrived_b;
+        bool iSLAMCovarianceMsgArrived_b;
         bool iIMUMsgArrived_b;
         bool iVehicleStatusMsgArrived_b;
         uint64_t iIMUMsgArriveTime_u64;
         uint64_t iVehicleStatusMsgArriveTime_u64;
         
-
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr iROSPubAccuracyMarker_cl;
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr iROSPubEstimatedPoseCog_cl;
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr iROSPubEstimatedPoseBaselink_cl;
@@ -222,7 +233,8 @@ class KalmanPosNode : public rclcpp::Node
             
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr iROSSubGNSSPose_cl;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr iROSSubSLAMPose_cl;
-        rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubNavSatFix_cl;
+        rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubGNSSCovariance_cl;
+        rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubSLAMCovariance_cl;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr iROSSubIMU_cl;
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr iROSSubVehicleStatus_cl;
 
@@ -232,7 +244,8 @@ class KalmanPosNode : public rclcpp::Node
         geometry_msgs::msg::PoseStamped iROSSLAMPositionMsg_msg;
         geometry_msgs::msg::PoseStamped iROSGNSSCogPositionMsg_msg;
         geometry_msgs::msg::PoseStamped iROSSLAMCogPositionMsg_msg;
-        sensor_msgs::msg::NavSatFix iROSNavSatFixMsg_msg;
+        sensor_msgs::msg::NavSatFix iROSGNSSCovarianceMsg_msg;
+        sensor_msgs::msg::NavSatFix iROSSLAMCovarianceMsg_msg;
         sensor_msgs::msg::Imu iROSIMUMsg_msg;
         geometry_msgs::msg::TwistStamped iROSVehicleStatusMsg_msg;
 
@@ -252,11 +265,18 @@ class KalmanPosNode : public rclcpp::Node
             iROSSLAMCogPositionMsg_msg = iROSSLAMPositionMsg_msg;
         }
 
-        void navSatFixCallback(const sensor_msgs::msg::NavSatFix::ConstSharedPtr pMsg_msgp)
+        void gnssCovarianceCallback(const sensor_msgs::msg::NavSatFix::ConstSharedPtr pMsg_msgp)
         {
-            RCLCPP_INFO_ONCE(this->get_logger(), "NavSatFix Callback");
-            iNavSatFixMsgArrived_b = true;
-            iROSNavSatFixMsg_msg = *pMsg_msgp;
+            RCLCPP_INFO_ONCE(this->get_logger(), "GNSS Covariance Callback");
+            iGNSSCovarianceMsgArrived_b = true;
+            iROSGNSSCovarianceMsg_msg = *pMsg_msgp;
+        }
+
+        void slamCovarianceCallback(const sensor_msgs::msg::NavSatFix::ConstSharedPtr pMsg_msgp)
+        {
+            RCLCPP_INFO_ONCE(this->get_logger(), "SLAM Covariance Callback");
+            iSLAMCovarianceMsgArrived_b = true;
+            iROSSLAMCovarianceMsg_msg = *pMsg_msgp;
         }
 
         void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr pMsg_msgp)
@@ -330,7 +350,8 @@ class KalmanPosNode : public rclcpp::Node
                 //} else {
                 //    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);    
                 //}
-                iPositionEstimation_cl.setMeasuredValuesVehicleState((iROSVehicleStatusMsg_msg.twist.angular.z*3.1416/180), iROSVehicleStatusMsg_msg.twist.linear.x*1);
+                iPositionEstimation_cl.setMeasuredValuesVehicleState((iROSVehicleStatusMsg_msg.twist.angular.z), iROSVehicleStatusMsg_msg.twist.linear.x*1);
+                // iPositionEstimation_cl.setMeasuredValuesVehicleState((iROSVehicleStatusMsg_msg.twist.angular.z*3.1416/180), iROSVehicleStatusMsg_msg.twist.linear.x*1);
 
                 // TODO no message for driving mode
                 int32_t lPrevDrivingMode_i32 = iDrivingMode_i32;
@@ -341,24 +362,38 @@ class KalmanPosNode : public rclcpp::Node
                     lResetEstimation_b = true;
                 }
 
-                bool lGNSSavailable_b = iROSParamGNSSAvailable_b && iGNSSPoseMsgArrived_b && iNavSatFixMsgArrived_b;
-                bool lSLAMavailable_b = iROSParamSLAMAvailable_b && iSLAMPoseMsgArrived_b;
-                double lGNSSCovariance_da[3] = {iROSNavSatFixMsg_msg.position_covariance[0], iROSNavSatFixMsg_msg.position_covariance[4], iROSNavSatFixMsg_msg.position_covariance[8]};
-                double lSLAMCovariance_da[3] = {5, 5, 5};
-                if (lGNSSavailable_b) {
+                bool lGNSSAvailable_b = iROSParamGNSSAvailable_b && iGNSSPoseMsgArrived_b;
+                bool lGNSSCovarianceAvailable_b = iGNSSCovarianceMsgArrived_b;
+                bool lSLAMAvailable_b = iROSParamSLAMAvailable_b && iSLAMPoseMsgArrived_b;
+                bool lSLAMCovarianceAvailable_b = iSLAMCovarianceMsgArrived_b;
+                double lGNSSCovariance_da[3] = {iROSParamGNSSDefaultCovariance_d, iROSParamGNSSDefaultCovariance_d, iROSParamGNSSDefaultCovariance_d};
+                double lSLAMCovariance_da[3] = {iROSParamSLAMDefaultCovariance_d, iROSParamSLAMDefaultCovariance_d, iROSParamSLAMDefaultCovariance_d};
+                
+                if (lGNSSCovarianceAvailable_b) {
+                    lGNSSCovariance_da[0] = iROSGNSSCovarianceMsg_msg.position_covariance[0];
+                    lGNSSCovariance_da[1] = iROSGNSSCovarianceMsg_msg.position_covariance[4];
+                    lGNSSCovariance_da[2] = iROSGNSSCovarianceMsg_msg.position_covariance[8];
+                }
+                if (lSLAMCovarianceAvailable_b) {
+                    lSLAMCovariance_da[0] = iROSSLAMCovarianceMsg_msg.position_covariance[0];
+                    lSLAMCovariance_da[1] = iROSSLAMCovarianceMsg_msg.position_covariance[4];
+                    lSLAMCovariance_da[2] = iROSSLAMCovarianceMsg_msg.position_covariance[8];
+                }
+
+                if (lGNSSAvailable_b) {
                     if ((lGNSSCovariance_da[0] > iROSParamGNSSAccuracyLimit_d) || (lGNSSCovariance_da[1] > iROSParamGNSSAccuracyLimit_d)) {
-                        lGNSSavailable_b = false;
+                        lGNSSAvailable_b = false;
                     }
                 }
-                if (lSLAMavailable_b) {
+                if (lSLAMAvailable_b) {
                     if ((lSLAMCovariance_da[0] > iROSParamSLAMAccuracyLimit_d) || (lSLAMCovariance_da[1] > iROSParamSLAMAccuracyLimit_d)) {
-                        lSLAMavailable_b = false;
+                        lSLAMAvailable_b = false;
                     }
                 }
 
                 iPositionEstimation_cl.iterateEstimation( iROSParamUseRawModel_b,
-                                                          lGNSSavailable_b,
-                                                          lSLAMavailable_b,
+                                                          lGNSSAvailable_b,
+                                                          lSLAMAvailable_b,
                                                           lGNSSCovariance_da,
                                                           lSLAMCovariance_da,
                                                           lResetEstimation_b);
@@ -484,10 +519,10 @@ class KalmanPosNode : public rclcpp::Node
             lROSEstAccuracyMarker_msg.pose.orientation.y = 0.0;
             lROSEstAccuracyMarker_msg.pose.orientation.z = 0.0;
             lROSEstAccuracyMarker_msg.pose.orientation.w = 1.0;
-            if (iNavSatFixMsgArrived_b) {
-                lROSEstAccuracyMarker_msg.scale.x = lAccuracyScaleFactor_d * (sqrt(iROSNavSatFixMsg_msg.position_covariance[0] * iROSNavSatFixMsg_msg.position_covariance[4]))/2;
-                lROSEstAccuracyMarker_msg.scale.y = lAccuracyScaleFactor_d * (sqrt(iROSNavSatFixMsg_msg.position_covariance[0] * iROSNavSatFixMsg_msg.position_covariance[4]))/2;
-                lROSEstAccuracyMarker_msg.scale.z = lAccuracyScaleFactor_d * (sqrt(iROSNavSatFixMsg_msg.position_covariance[0] * iROSNavSatFixMsg_msg.position_covariance[4]))/2;            
+            if (iGNSSCovarianceMsgArrived_b) {
+                lROSEstAccuracyMarker_msg.scale.x = lAccuracyScaleFactor_d * (sqrt(iROSGNSSCovarianceMsg_msg.position_covariance[0] * iROSGNSSCovarianceMsg_msg.position_covariance[4]))/2;
+                lROSEstAccuracyMarker_msg.scale.y = lAccuracyScaleFactor_d * (sqrt(iROSGNSSCovarianceMsg_msg.position_covariance[0] * iROSGNSSCovarianceMsg_msg.position_covariance[4]))/2;
+                lROSEstAccuracyMarker_msg.scale.z = lAccuracyScaleFactor_d * (sqrt(iROSGNSSCovarianceMsg_msg.position_covariance[0] * iROSGNSSCovarianceMsg_msg.position_covariance[4]))/2;            
             } else {
                 lROSEstAccuracyMarker_msg.scale.x = lAccuracyScaleFactor_d * 10;
                 lROSEstAccuracyMarker_msg.scale.y = lAccuracyScaleFactor_d * 10;
@@ -528,8 +563,8 @@ class KalmanPosNode : public rclcpp::Node
                 }
                 if (param.get_name() == "nav_sat_fix_topic")
                 {
-                    iROSParamNavSatFixTopic_s = param.as_string();
-                    //iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamNavSatFixTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
+                    iROSParamGNSSCovarianceTopic_s = param.as_string();
+                    //iROSSubNavSatFix_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamGNSSCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::navSatFixCallback, this, std::placeholders::_1));
                 }
                 if (param.get_name() == "imu_topic")
                 {
@@ -587,6 +622,14 @@ class KalmanPosNode : public rclcpp::Node
                 if (param.get_name() == "slam_accuracy_limit")
                 {
                     iROSParamSLAMAccuracyLimit_d = param.as_double();
+                }
+                if (param.get_name() == "gnss_default_covariance")
+                {
+                    iROSParamGNSSDefaultCovariance_d = param.as_double();
+                }
+                if (param.get_name() == "slam_default_covariance")
+                {
+                    iROSParamSLAMDefaultCovariance_d = param.as_double();
                 }
                 if (param.get_name() == "use_raw_model")
                 {
