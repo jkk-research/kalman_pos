@@ -9,17 +9,17 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {"gnss_pose_topic": "/lexus3/gps/nova/current_pose"},
-                {"slam_pose_topic": "/lexus3/gps/duro/current_pose"},
+                {"slam_pose_topic": "/lexus3/gps/nova/current_pose"},
                 {"vehicle_status_topic": "/lexus3/vehicle_status"},
                 {"gnss_covariance_topic": "/lexus3/gps/nova/fix"},
                 {"slam_covariance_topic": "gps/duro/fix"},
-                {"imu_topic": "/lexus3/gps/nova/imu"}, # cog
+                {"imu_topic": "/lexus3/gps/nova/imu/data"}, # cog
                 {"est_cog_topic": "estimated_pose_cog"},
                 {"est_baselink_topic": "estimated_pose_baselink"},
                 {"est_accuracy_topic": "estimation_accuracy"},
                 {"est_trav_distance_odom_topic": "distance"},
                 {"est_trav_distance_est_pos_topic": "estimated_trav_dist_est_pos"},
-                {"loop_rate_hz": 60},
+                {"loop_rate_hz": 20},
                 {"gnss_available": False},
                 {"slam_available": False},
                 {"gnss_accuracy_limit": 10.0},
@@ -28,17 +28,17 @@ def generate_launch_description():
                 {"slam_default_covariance": 15.0},
                 {"dynamic_time_calc": True},
                 {"do_not_wait_for_gnss_msgs": True},
-                {"kinematic_model_max_speed": 10.1},
+                {"kinematic_model_max_speed": 1.1},
                 {"use_raw_model": False},
                 {"orientation_est_enabled": False},
                 {"msg_timeout": 2000.0},
                 {"vehicle_param_c1": 30000.0},
-                {"vehicle_param_c2": 30000.0},
+                {"vehicle_param_c2": 34000.0},
                 {"vehicle_param_m": 1800.0},
                 {"vehicle_param_jz": 2700.0},
                 {"vehicle_param_l1": 1.2},
                 {"vehicle_param_l2": 1.589},
-                {"vehicle_param_swr": 1.0}
+                {"vehicle_param_swr": 14.8}, # TODO: check pacmod
             ]
         ),
         # Node(

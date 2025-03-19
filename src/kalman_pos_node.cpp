@@ -346,7 +346,7 @@ class KalmanPosNode : public rclcpp::Node
                 iPositionEstimation_cl.setMeasuredValuesGNSS(iROSGNSSCogPositionMsg_msg.pose.position.x, iROSGNSSCogPositionMsg_msg.pose.position.y, iROSGNSSCogPositionMsg_msg.pose.position.z, lTmpYaw_d);
 
                 //if ((iROSParamImuTopic_s == "gps/duro/imu") || (iROSParamImuTopic_s == "imu/data")) {
-                    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, -1*iROSIMUMsg_msg.angular_velocity.z);
+                    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);
                 //} else {
                 //    iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);    
                 //}
