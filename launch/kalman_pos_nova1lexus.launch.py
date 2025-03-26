@@ -9,7 +9,7 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {"gnss_pose_topic": "/lexus3/gps/nova/current_pose"},
-                {"slam_pose_topic": "/lexus3/gps/nova/current_pose"},
+                {"slam_pose_topic": "/lexus3/gps/duro/current_pose"},
                 {"vehicle_status_topic": "/lexus3/vehicle_status"},
                 {"gnss_covariance_topic": "/lexus3/gps/nova/fix"},
                 {"slam_covariance_topic": "gps/duro/fix"},
@@ -32,13 +32,14 @@ def generate_launch_description():
                 {"use_raw_model": False},
                 {"orientation_est_enabled": False},
                 {"msg_timeout": 2000.0},
+                {"invert_yaw_rate": False},
                 {"vehicle_param_c1": 30000.0},
                 {"vehicle_param_c2": 34000.0},
                 {"vehicle_param_m": 1800.0},
                 {"vehicle_param_jz": 2700.0},
                 {"vehicle_param_l1": 1.2},
                 {"vehicle_param_l2": 1.589},
-                {"vehicle_param_swr": 14.8}, # TODO: check pacmod
+                {"vehicle_param_swr": 14.8}
             ]
         ),
         # Node(

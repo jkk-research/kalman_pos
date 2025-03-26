@@ -713,8 +713,12 @@ void cCombinedVehicleModel::initEKFMatrices(void) {
 void cCombinedVehicleModel::setPrevEKFMatrices(void) {
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
-            iPrevPDyn_wEKFwExtPos1_m(i, j)        = iPDyn_wEKFwExtPos1_m(i, j);
-            iPrevPKin_wEKFwExtPos1_m(i, j)        = iPKin_wEKFwExtPos1_m(i, j);
+            iPrevPDyn_wEKFwExtPos1_m(i, j)  = iPDyn_wEKFwExtPos1_m(i, j);
+            iPrevPKin_wEKFwExtPos1_m(i, j)  = iPKin_wEKFwExtPos1_m(i, j);
+            iPrevPDyn_wEKFwExtPos2_m(i, j)  = iPDyn_wEKFwExtPos2_m(i, j);
+            iPrevPKin_wEKFwExtPos2_m(i, j)  = iPKin_wEKFwExtPos2_m(i, j);
+            iPrevPDyn_wEKFwExtPos1Pos2_m(i, j)  = iPDyn_wEKFwExtPos1Pos2_m(i, j);
+            iPrevPKin_wEKFwExtPos1Pos2_m(i, j)  = iPKin_wEKFwExtPos1Pos2_m(i, j);
             iPrevPDyn_wEKFwoExtPos_m(i, j)  = iPDyn_wEKFwoExtPos_m(i, j);
             iPrevPKin_wEKFwoExtPos_m(i, j)  = iPKin_wEKFwoExtPos_m(i, j);
         }

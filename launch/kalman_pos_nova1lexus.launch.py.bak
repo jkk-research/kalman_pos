@@ -8,12 +8,12 @@ def generate_launch_description():
             executable='kalman_pos_node',
             output='screen',
             parameters=[
-                {"gnss_pose_topic": "gps/nova/current_pose"},
-                {"slam_pose_topic": "gps/duro/current_pose"},
-                {"vehicle_status_topic": "vehicle_status"},
-                {"gnss_covariance_topic": "gps/nova/fix"},
+                {"gnss_pose_topic": "/lexus3/gps/nova/current_pose"},
+                {"slam_pose_topic": "/lexus3/gps/duro/current_pose"},
+                {"vehicle_status_topic": "/lexus3/vehicle_status"},
+                {"gnss_covariance_topic": "/lexus3/gps/nova/fix"},
                 {"slam_covariance_topic": "gps/duro/fix"},
-                {"imu_topic": "imu/data"}, # cog
+                {"imu_topic": "/lexus3/gps/nova/imu"}, # cog
                 {"est_cog_topic": "estimated_pose_cog"},
                 {"est_baselink_topic": "estimated_pose_baselink"},
                 {"est_accuracy_topic": "estimation_accuracy"},
@@ -28,18 +28,18 @@ def generate_launch_description():
                 {"slam_default_covariance": 15.0},
                 {"dynamic_time_calc": True},
                 {"do_not_wait_for_gnss_msgs": True},
-                {"kinematic_model_max_speed": 0.3},
+                {"kinematic_model_max_speed": 1.1},
                 {"use_raw_model": False},
                 {"orientation_est_enabled": False},
                 {"msg_timeout": 2000.0},
                 {"invert_yaw_rate": False},
-                {"vehicle_param_c1" : 3000.0},
-                {"vehicle_param_c2" : 3000.0},
-                {"vehicle_param_m" : 180.0},
-                {"vehicle_param_jz" : 270.0},
-                {"vehicle_param_l1" : 0.624},
-                {"vehicle_param_l2" : 0.676},
-                {"vehicle_param_swr" : 1.0}
+                {"vehicle_param_c1": 30000.0},
+                {"vehicle_param_c2": 34000.0},
+                {"vehicle_param_m": 1800.0},
+                {"vehicle_param_jz": 2700.0},
+                {"vehicle_param_l1": 1.2},
+                {"vehicle_param_l2": 1.589},
+                {"vehicle_param_swr": 14.8}
             ]
         ),
         # Node(
@@ -79,5 +79,3 @@ def generate_launch_description():
         #     ]
         # ),
     ])
-
-
