@@ -7,6 +7,7 @@
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/bool.hpp>
 // #include <novatel_gps_msgs/msg/inspvax.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
@@ -43,7 +44,6 @@ class KalmanPosNode : public rclcpp::Node
             iVehicleStatusMsgArrived_b = false;
             iIMUMsgArriveTime_u64 = 0;
             iVehicleStatusMsgArriveTime_u64 = 0;
-            iDrivingMode_i32 = 0;
             iOriEstimationEnabled_b = false;
             iROSParamInvertYawRate_b = false;
 
@@ -80,6 +80,7 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<double>("vehicle_param_l1", 0.624);
             this->declare_parameter<double>("vehicle_param_l2", 0.676);
             this->declare_parameter<double>("vehicle_param_swr", 1); 
+            this->declare_parameter<std::string>("autonomous_mode_topic", "myrio_state");
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Get Parameters");
             this->get_parameter("gnss_pose_topic", iROSParamGNSSPoseTopic_s);
@@ -115,6 +116,7 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("vehicle_param_l1", iROSParamVehicleParamL1_d);
             this->get_parameter("vehicle_param_l2", iROSParamVehicleParamL2_d);
             this->get_parameter("vehicle_param_swr", iROSParamVehicleParamSWR_d);
+            this->get_parameter("autonomous_mode_topic", iROSParamAutonomousModeTopic_s);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Subscriptions");
             iROSSubGNSSPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamGNSSPoseTopic_s, 1000, std::bind(&KalmanPosNode::gnssPoseCallback, this, std::placeholders::_1));
@@ -123,7 +125,8 @@ class KalmanPosNode : public rclcpp::Node
             iROSSubGNSSCovariance_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamGNSSCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::gnssCovarianceCallback, this, std::placeholders::_1));
             iROSSubSLAMCovariance_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamSLAMCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::slamCovarianceCallback, this, std::placeholders::_1));
             iROSSubIMU_cl = this->create_subscription<sensor_msgs::msg::Imu>(iROSParamImuTopic_s, 1000, std::bind(&KalmanPosNode::imuCallback, this, std::placeholders::_1));
-            
+            iROSSubAutonomousMode_cl = this->create_subscription<std_msgs::msg::Bool>(iROSParamAutonomousModeTopic_s, 1000, std::bind(&KalmanPosNode::autonomousModeCallback, this, std::placeholders::_1)); 
+
             RCLCPP_INFO_ONCE(this->get_logger(), "Create Publisher");
             iROSPubEstimatedPoseCog_cl = this->create_publisher<geometry_msgs::msg::PoseStamped>(iROSParamEstimatedPoseCogTopic_s, 1000);
             iROSPubEstimatedPoseBaselink_cl = this->create_publisher<geometry_msgs::msg::PoseStamped>(iROSParamEstimatedPoseBaselinkTopic_s, 1000);
@@ -165,7 +168,7 @@ class KalmanPosNode : public rclcpp::Node
             // RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << (1/iROSParamLoopRateHz_i32) * 1000 << " ms"); // NOK
             RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << millisec << " ms");
 
-            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tGNSS Pose Topic: %s\n\tSLAM Pose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tGNSS Available: %d\n\tSLAM Available: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tInvert Yaw Rate: %d\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n\tGNSS Accuracy Limit: %f\n\tSLAM Accuracy Limit: %f\n\tUse Raw Model Only: %d\n\tOri. Est. Enabled: %d", 
+            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tGNSS Pose Topic: %s\n\tSLAM Pose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tGNSS Available: %d\n\tSLAM Available: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tInvert Yaw Rate: %d\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n\tGNSS Accuracy Limit: %f\n\tSLAM Accuracy Limit: %f\n\tUse Raw Model Only: %d\n\tOri. Est. Enabled: %d\n\tAutonomous Mode Topic: %s", 
                                                     iROSParamGNSSPoseTopic_s.c_str(), iROSParamSLAMPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
                                                     iROSParamGNSSCovarianceTopic_s.c_str(), iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
                                                     iROSParamEstimatedPoseBaselinkTopic_s.c_str(), iROSParamEstimationAccuracyTopic_s.c_str(),
@@ -174,7 +177,8 @@ class KalmanPosNode : public rclcpp::Node
                                                     iROSParamEstimatedTravDistOdom_s.c_str(), iROSParamEstimatedTravDistEstPos_s.c_str(), iROSParamVehicleParamC1_d, 
                                                     iROSParamVehicleParamC2_d, iROSParamVehicleParamM_d, iROSParamVehicleParamJz_d,
                                                     iROSParamVehicleParamL1_d, iROSParamVehicleParamL2_d, iROSParamVehicleParamSWR_d,
-                                                    iROSParamGNSSAccuracyLimit_d, iROSParamSLAMAccuracyLimit_d, iROSParamUseRawModel_b, iOriEstimationEnabled_b);
+                                                    iROSParamGNSSAccuracyLimit_d, iROSParamSLAMAccuracyLimit_d, iROSParamUseRawModel_b, iOriEstimationEnabled_b,
+                                                    iROSParamAutonomousModeTopic_s.c_str());
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Finalize Initialization");
         }
@@ -184,6 +188,7 @@ class KalmanPosNode : public rclcpp::Node
     private:
         // Declare ROS parameter variables
         std::string iROSParamGNSSPoseTopic_s;
+        std::string iROSParamAutonomousModeTopic_s;
         std::string iROSParamSLAMPoseTopic_s;
         std::string iROSParamImuTopic_s;
         std::string iROSParamEstimatedPoseCogTopic_s; 
@@ -241,6 +246,7 @@ class KalmanPosNode : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubSLAMCovariance_cl;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr iROSSubIMU_cl;
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr iROSSubVehicleStatus_cl;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr iROSSubAutonomousMode_cl;
 
         std::unique_ptr<tf2_ros::TransformBroadcaster> iEstPosBaselinkTransformBroadcaster_cl;
 
@@ -252,20 +258,21 @@ class KalmanPosNode : public rclcpp::Node
         sensor_msgs::msg::NavSatFix iROSSLAMCovarianceMsg_msg;
         sensor_msgs::msg::Imu iROSIMUMsg_msg;
         geometry_msgs::msg::TwistStamped iROSVehicleStatusMsg_msg;
+        std_msgs::msg::Bool iROSAutonomousModeMsg_msg;
 
-        void gnssPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
+        void gnssPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr pMsg_msgp)
         {
             RCLCPP_INFO_ONCE(this->get_logger(), "GNSS Pose Callback");
             iGNSSPoseMsgArrived_b = true;
-            iROSGNSSPositionMsg_msg = *msg;
+            iROSGNSSPositionMsg_msg = *pMsg_msgp;
             iROSGNSSCogPositionMsg_msg = iROSGNSSPositionMsg_msg;
         }
 
-        void slamPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
+        void slamPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr pMsg_msgp)
         {
             RCLCPP_INFO_ONCE(this->get_logger(), "SLAM Pose Callback");
             iSLAMPoseMsgArrived_b = true;
-            iROSSLAMPositionMsg_msg = *msg;
+            iROSSLAMPositionMsg_msg = *pMsg_msgp;
             iROSSLAMCogPositionMsg_msg = iROSSLAMPositionMsg_msg;
         }
 
@@ -305,6 +312,18 @@ class KalmanPosNode : public rclcpp::Node
             iVehicleStatusMsgArriveTime_u64 = 
                 (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
+        }
+
+        void autonomousModeCallback(const std_msgs::msg::Bool::ConstSharedPtr pMsg_msgp)
+        {
+            RCLCPP_INFO_ONCE(this->get_logger(), "Autonomous Mode Callback");
+            iROSAutonomousModeMsg_msg = *pMsg_msgp;
+            iPrevDrivingMode_i32 = iDrivingMode_i32;
+            if (iROSAutonomousModeMsg_msg.data) {
+                iDrivingMode_i32 = 1;
+            } else {
+                iDrivingMode_i32 = 0;
+            }
         }
 
         void timerCallback()
@@ -356,12 +375,11 @@ class KalmanPosNode : public rclcpp::Node
                 }
                 iPositionEstimation_cl.setMeasuredValuesVehicleState((iROSVehicleStatusMsg_msg.twist.angular.z), iROSVehicleStatusMsg_msg.twist.linear.x);
 
-                // TODO no message for driving mode
-                int32_t lPrevDrivingMode_i32 = iDrivingMode_i32;
-                iDrivingMode_i32 = 0;//iROSVehicleStatusMsg_msg.drivemode;
+                //int32_t lPrevDrivingMode_i32 = iDrivingMode_i32;
+                //iDrivingMode_i32 = 0;//iROSVehicleStatusMsg_msg.drivemode;
 
                 bool lResetEstimation_b = false;
-                if (lPrevDrivingMode_i32 != iDrivingMode_i32) {
+                if (iPrevDrivingMode_i32 != iDrivingMode_i32) {
                     lResetEstimation_b = true;
                 }
 
@@ -551,6 +569,11 @@ class KalmanPosNode : public rclcpp::Node
             for (const auto &param : parameters)
             {
                 RCLCPP_INFO_STREAM(this->get_logger(), "Param update: " << param.get_name().c_str() << ": " << param.value_to_string().c_str());
+                if (param.get_name() == "autonomous_mode_topic")
+                {
+                    iROSParamAutonomousModeTopic_s = param.as_string();;
+                    iROSSubAutonomousMode_cl = this->create_subscription<std_msgs::msg::Bool>(iROSParamAutonomousModeTopic_s, 1000, std::bind(&KalmanPosNode::autonomousModeCallback, this, std::placeholders::_1)); 
+                }
                 if (param.get_name() == "gnss_pose_topic")
                 {
                     iROSParamGNSSPoseTopic_s = param.as_string();;

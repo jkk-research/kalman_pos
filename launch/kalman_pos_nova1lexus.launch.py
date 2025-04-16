@@ -39,7 +39,8 @@ def generate_launch_description():
                 {"vehicle_param_jz": 2700.0},
                 {"vehicle_param_l1": 1.2},
                 {"vehicle_param_l2": 1.589},
-                {"vehicle_param_swr": 14.8}
+                {"vehicle_param_swr": 14.8},
+                {"autonomous_mode_topic" : "myrio_state}
             ]
         ),
         # Node(
