@@ -381,6 +381,7 @@ class KalmanPosNode : public rclcpp::Node
                 bool lResetEstimation_b = false;
                 if (iPrevDrivingMode_i32 != iDrivingMode_i32) {
                     lResetEstimation_b = true;
+					iPrevDrivingMode_i32 = iDrivingMode_i32;
                 }
 
                 bool lGNSSAvailable_b = iROSParamGNSSAvailable_b && iGNSSPoseMsgArrived_b;
