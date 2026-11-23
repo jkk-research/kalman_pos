@@ -4,7 +4,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include <math.h>
 
-double kin_wEKFwExtPos1_LongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double kin_wEKFwExtPos1_LongitudinalVelocityCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = pPrevMeasuredValues_s.iLongitudinalAcceleration_d * pTs_d + pPrevModelStates_s.iLongitudinalVelocity_d;
@@ -12,7 +12,7 @@ double kin_wEKFwExtPos1_LongitudinalVelocityCalculation(sVehicleParameters pVehi
 	return lReturnValue_d;
 }
 
-double kin_wEKFwExtPos1_LateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double kin_wEKFwExtPos1_LateralVelocityCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = pPrevMeasuredValues_s.iLateralAcceleration_d * pTs_d + pPrevModelStates_s.iLateralVelocity_d;
@@ -20,7 +20,7 @@ double kin_wEKFwExtPos1_LateralVelocityCalculation(sVehicleParameters pVehiclePa
 	return lReturnValue_d;
 }
 
-double kin_wEKFwExtPos1_BetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates pModelStates_s, double pTs_d) {
+double kin_wEKFwExtPos1_BetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates /*pModelStates_s*/, double /*pTs_d*/) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d =
@@ -29,7 +29,7 @@ double kin_wEKFwExtPos1_BetaCalculation(sVehicleParameters pVehicleParameters_s,
 	return lReturnValue_d;
 }
 
-double kin_wEKFwExtPos1_YawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d, double pLongitudinalVelocity_d, double pBeta_d) {
+double kin_wEKFwExtPos1_YawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues /*pPrevMeasuredValues_s*/, sModelStates /*pPrevModelStates_s*/, double /*pTs_d*/, double pLongitudinalVelocity_d, double pBeta_d) {
 	double lReturnValue_d = 0;
 	
 	lReturnValue_d = pLongitudinalVelocity_d * tan(pBeta_d) / pVehicleParameters_s.iL2_d;
@@ -37,14 +37,14 @@ double kin_wEKFwExtPos1_YawRateCalculation(sVehicleParameters pVehicleParameters
 	return lReturnValue_d;
 }
 
-double kin_wEKFwExtPos1_MeasBasedLongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double kin_wEKFwExtPos1_MeasBasedLongitudinalVelocityCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pMeasuredValues_s, double /*pTs_d*/) {
 	double lLongitudinalSpeed_d = 0;
 
 	lLongitudinalSpeed_d = pMeasuredValues_s.iVehicleSpeed_d;
 	return lLongitudinalSpeed_d;
 }
 
-double kin_wEKFwExtPos1_MeasBasedLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double kin_wEKFwExtPos1_MeasBasedLateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double /*pTs_d*/) {
 	double lLateralSpeed_d = 0;
 	double lLongitudinalSpeed_d = 0;
 
@@ -53,11 +53,11 @@ double kin_wEKFwExtPos1_MeasBasedLateralVelocityCalculation(sVehicleParameters p
 	return lLateralSpeed_d;
 }
 
-double kin_wEKFwExtPos1_LateralAccCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pBeta_d, double pYawRate_d) {
+double kin_wEKFwExtPos1_LateralAccCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pMeasuredValues_s, double /*pBeta_d*/, double /*pYawRate_d*/) {
 	return pMeasuredValues_s.iLateralAcceleration_d;
 }
 
-double kin_wEKFwExtPos1_YawAngleCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double kin_wEKFwExtPos1_YawAngleCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues /*pPrevMeasuredValues_s*/, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = (pPrevModelStates_s.iYawRate_d * pTs_d) + pPrevModelStates_s.iYawAngle_d;
@@ -65,7 +65,7 @@ double kin_wEKFwExtPos1_YawAngleCalculation(sVehicleParameters pVehicleParameter
 	return lReturnValue_d;
 }
 
-double kin_wEKFwExtPos1_PositionXCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double kin_wEKFwExtPos1_PositionXCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues /*pPrevMeasuredValues_s*/, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevLongitudinalSpeed_d = 0;
 	double lPrevLateralSpeed_d = 0;
@@ -85,7 +85,7 @@ double kin_wEKFwExtPos1_PositionXCalculation(sVehicleParameters pVehicleParamete
 	return lReturnValue_d;
 }
 
-double kin_wEKFwExtPos1_PositionYCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double kin_wEKFwExtPos1_PositionYCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues /*pPrevMeasuredValues_s*/, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 	double lPrevLongitudinalSpeed_d = 0;
 	double lPrevLateralSpeed_d = 0;
@@ -121,12 +121,8 @@ void kin_wEKFwExtPos1_Estimate(sModelStates &pOutModelStates_s, matrix<double>& 
 	double lMeasBasedLongitudinalVelocity_d  = kin_wEKFwExtPos1_MeasBasedLongitudinalVelocityCalculation(pVehicleParameters_s, pMeasuredValues_s, pTs_d);
 
 	double lMeasYawRate_d			= pPrevMeasuredValues_s.iYawRate_d;
-	double lMeasYawAngle_d			= pPrevMeasuredValues_s.iYawAngle1_d;
-	double lMeasLateralAcc_d		= pPrevMeasuredValues_s.iLateralAcceleration_d;
 	double lMeasPositionX_d			= pPrevMeasuredValues_s.iPosition1X_d;
 	double lMeasPositionY_d			= pPrevMeasuredValues_s.iPosition1Y_d;
-	double lPrevMeasVehicleSpeed_d	= pPrevMeasuredValues_s.iVehicleSpeed_d;
-	double lPrevMeasLateralAcc_d	= pPrevMeasuredValues_s.iLateralAcceleration_d;
 
 
 	vector<double> lh_v(5);
@@ -142,7 +138,6 @@ void kin_wEKFwExtPos1_Estimate(sModelStates &pOutModelStates_s, matrix<double>& 
 	matrix<double> lM_m(5, 5);
 	matrix<double> lI_m(5, 5);
 
-	lPrevMeasVehicleSpeed_d = pPrevMeasuredValues_s.iVehicleSpeed_d;
 
 	lh_v(0) = lLongitudinalVelocity_d;
 	lh_v(1) = lLateralVelocity_d;

@@ -2,14 +2,14 @@
 
 #include <math.h>
 
-double kin_woEKFwoExtPos_LongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double kin_woEKFwoExtPos_LongitudinalVelocityCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pMeasuredValues_s, double /*pTs_d*/) {
 	double lLongitudinalSpeed_d = 0;
 
 	lLongitudinalSpeed_d = pMeasuredValues_s.iVehicleSpeed_d;
 	return lLongitudinalSpeed_d;
 }
 
-double kin_woEKFwoExtPos_LateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double kin_woEKFwoExtPos_LateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double /*pTs_d*/) {
 	double lLateralSpeed_d = 0;
 	double lLongitudinalSpeed_d = 0;
 
@@ -18,7 +18,7 @@ double kin_woEKFwoExtPos_LateralVelocityCalculation(sVehicleParameters pVehicleP
 	return lLateralSpeed_d;
 }
 
-double kin_woEKFwoExtPos_BetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates pModelStates_s, double pTs_d) {
+double kin_woEKFwoExtPos_BetaCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates /*pModelStates_s*/, double /*pTs_d*/) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d =
@@ -27,7 +27,7 @@ double kin_woEKFwoExtPos_BetaCalculation(sVehicleParameters pVehicleParameters_s
 	return lReturnValue_d;
 }
 
-double kin_woEKFwoExtPos_YawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates pModelStates_s, double pTs_d) {
+double kin_woEKFwoExtPos_YawRateCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, sModelStates /*pModelStates_s*/, double /*pTs_d*/) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d =
@@ -38,7 +38,7 @@ double kin_woEKFwoExtPos_YawRateCalculation(sVehicleParameters pVehicleParameter
 	return lReturnValue_d;
 }
 
-double kin_woEKFwoExtPos_YawAngleCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double kin_woEKFwoExtPos_YawAngleCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues /*pPrevMeasuredValues_s*/, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = (pPrevModelStates_s.iYawRate_d * pTs_d) + pPrevModelStates_s.iYawAngle_d;

@@ -34,19 +34,20 @@ cd ~/ros2_ws
 ```
 
 ``` bash
-colcon build --symlink-install --packages-select kalman_pos
+colcon build --symlink-install --packages-select kalman_pos --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
 # ROS publications / subscriptions
 
-The main node is `kalman_pos_node`, also there is a `vehicle_status_convert` node for converting the vehicle status message to the required format.
+The main node is `kalman_pos_node`.
 
 ```mermaid
 flowchart LR
 
 A[ /imu<br/>sensor_msgs/Imu] --> F(kalman_pos)
 B[ /current_pose<br/>geometry_msgs/PoseStamped] --> F
-C[ /vehicle_status<br/>geometry_msgs/Twist] --> F
+C[ /vehicle_status<br/>geometry_msgs/TwistStamped] --> F
+S[ /vehicle_steering<br/>std_msgs/Float64<br/>-if legacy_twist is false-] -.-> F
 D[ /nova_fix<br/>sensor_msgs/NavSatFix] --> F
 E[ /duro_status<br/>std_msgs/String] --> F
 F -->  G[ /estimated_pose_cog<br/>geometry_msgs/PoseStamped]
@@ -54,10 +55,6 @@ F -->  H[ /estimated_pose_baselink<br/>geometry_msgs/PoseStamped]
 F -->  I[ /distance<br/>std_msgs/Float32]
 F -->  J[ /estimated_trav_dist_est_pos<br/>std_msgs/Float32]
 F -->  K[ /estimation_accuracy<br/>visualization_msgs/Marker]
-
-V1(vehicle_status_convert <br> -optional-) -.-> C
-V3[ /vehicle_speed <br/> std_msgs/Float32] --> V1
-V4[ /vehicle_steering <br/> std_msgs/Float32] --> V1
 
 
 classDef light fill:#34aec5,stroke:#152742,stroke-width:2px,color:#152742  
@@ -67,8 +64,7 @@ classDef red fill:#ef4638,stroke:#152742,stroke-width:2px,color:#fff
 classDef dashed fill:#ef4638,stroke:#152742,stroke-width:3px,stroke-dasharray:5,5,color:#fff
 
 class F red
-class V1 dashed
-class A,B,C,D,E,G,H,I,J,K,V3,V4 light
+class A,B,C,D,E,G,H,I,J,K,S light
 
 ```
 
@@ -99,6 +95,14 @@ ros2 launch kalman_pos kalman_pos_node.launch.py
   - type: `string` 
   - default value: `vehicle_status`
   - description: the name of the vehicle status topic (subscriber, geometry_msgs::msg::TwistStamped).
+- `vehicle_steering_topic`
+  - type: `string`
+  - default value: `vehicle_steering`
+  - description: the name of the steering angle topic (subscriber, std_msgs::msg::Float64). Used only if `legacy_twist` is `false`.
+- `legacy_twist`
+  - type: `bool`
+  - default value: `true`
+  - description: if `true`, `twist.angular.z` of the vehicle status topic contains the steering angle (old structure). If `false`, `twist.angular.z` contains the yaw rate and the steering angle is read from `vehicle_steering_topic`.
 - `gnss_covariance_topic`
   - type: `string`
   - default value: `gps/duro/fix`
@@ -222,7 +226,7 @@ ros2 launch kalman_pos kalman_pos_node.launch.py
 
 ## Rosbag
 
-Download: [jkk-research.github.io/dataset](https://jkk-research.github.io/dataset)
+Download: [jkk-research.github.io/dataset](https://jkk-research.github.io/latest/dataset/)
 
 Direct download of zipped MCAPs: [download zip (~15 MB)](https://laesze-my.sharepoint.com/:u:/g/personal/herno_o365_sze_hu/EVofDCG_ORZJh--XTVLFsFEBOUYB1eAbHAzdTVDdf19Y9g?download=1)
 

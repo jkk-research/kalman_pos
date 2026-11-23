@@ -11,6 +11,8 @@ def generate_launch_description():
                 {"gnss_pose_topic": "gps/nova/current_pose"},
                 {"slam_pose_topic": "gps/duro/current_pose"},
                 {"vehicle_status_topic": "vehicle_status"},
+                {"vehicle_steering_topic": "vehicle_steering"},
+                {"legacy_twist": True}, # True: vehicle_status angular.z = steering angle (old); False: angular.z = yaw rate, steering from vehicle_steering_topic
                 {"gnss_covariance_topic": "gps/nova/fix"},
                 {"slam_covariance_topic": "gps/duro/fix"},
                 {"imu_topic": "imu/data"}, # cog
@@ -27,7 +29,7 @@ def generate_launch_description():
                 {"gnss_default_covariance": 15.0},
                 {"slam_default_covariance": 15.0},
                 {"dynamic_time_calc": True},
-                {"do_not_wait_for_gnss_msgs": True},
+                {"do_not_wait_for_pos_msgs": True},
                 {"kinematic_model_max_speed": 0.3},
                 {"use_raw_model": False},
                 {"orientation_est_enabled": False},
@@ -40,19 +42,9 @@ def generate_launch_description():
                 {"vehicle_param_l1" : 0.624},
                 {"vehicle_param_l2" : 0.676},
                 {"vehicle_param_swr" : 1.0},
-                {"autonomous_mode_topic" : "myrio_state}
+                {"autonomous_mode_topic": "myrio_state"},
             ]
         ),
-        # Node(
-        #     package='kalman_pos',
-        #     executable='vehicle_status_convert',
-        #     output='screen',
-        #     parameters=[
-        #         {"speed_topic": "/lexus3/vehicle_speed"},
-        #         {"steer_topic": "/lexus3/vehicle_steering"},
-        #         {"status_topic": "/lexus3/vehicle_status"},
-        #     ]
-        # ),
         # Node(
         #     package='tf2_ros',
         #     executable='static_transform_publisher',

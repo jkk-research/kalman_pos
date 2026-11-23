@@ -3,14 +3,14 @@
 
 #include <math.h>
 
-double dyn_woEKFwoExtPos_LongitudinalVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double dyn_woEKFwoExtPos_LongitudinalVelocityCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pMeasuredValues_s, double /*pTs_d*/) {
 	double lLongitudinalSpeed_d = 0;
 
 	lLongitudinalSpeed_d = pMeasuredValues_s.iVehicleSpeed_d;
 	return lLongitudinalSpeed_d;
 }
 
-double dyn_woEKFwoExtPos_LateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double pTs_d) {
+double dyn_woEKFwoExtPos_LateralVelocityCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pMeasuredValues_s, double /*pTs_d*/) {
 	double lLateralSpeed_d = 0;
 	double lLongitudinalSpeed_d = 0;
 
@@ -102,7 +102,7 @@ double dyn_woEKFwoExtPos_LateralAccCalculation(sVehicleParameters pVehicleParame
 	return lReturnValue_d;
 }
 
-double dyn_woEKFwoExtPos_YawAngleCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double dyn_woEKFwoExtPos_YawAngleCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues /*pPrevMeasuredValues_s*/, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d = (pPrevModelStates_s.iYawRate_d * pTs_d) + pPrevModelStates_s.iYawAngle_d;
@@ -110,7 +110,7 @@ double dyn_woEKFwoExtPos_YawAngleCalculation(sVehicleParameters pVehicleParamete
 	return lReturnValue_d;
 }
 
-double dyn_woEKFwoExtPos_PositionXCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double dyn_woEKFwoExtPos_PositionXCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d =
@@ -125,7 +125,7 @@ double dyn_woEKFwoExtPos_PositionXCalculation(sVehicleParameters pVehicleParamet
 	return lReturnValue_d;
 }
 
-double dyn_woEKFwoExtPos_PositionYCalculation(sVehicleParameters pVehicleParameters_s, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
+double dyn_woEKFwoExtPos_PositionYCalculation(sVehicleParameters /*pVehicleParameters_s*/, sMeasuredValues pPrevMeasuredValues_s, sModelStates pPrevModelStates_s, double pTs_d) {
 	double lReturnValue_d = 0;
 
 	lReturnValue_d =

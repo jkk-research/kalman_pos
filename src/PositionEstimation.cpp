@@ -21,7 +21,7 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     std::cout << "initEstimation\n";
     iFirstIteration_b = true;
     iLoopRateHz_i32 = pLoopRateHz_i32;
-    iTs_d = 1 / iLoopRateHz_i32;
+    iTs_d = 1.0 / iLoopRateHz_i32;
     iDynamicTimeCalcEnabled_b = pDynamicTimeCalcEnabled_b;
     iPrevMillisecondsSinceEpoch_u64 = 0;
     iMillisecondsSinceEpoch_u64 = 0;
@@ -56,6 +56,29 @@ void cPositionEstimation::initEstimation(bool pDynamicTimeCalcEnabled_b, int pLo
     iDefaultKinSpeedLimit_d = pKinematicModelMaxSpeed_f;
 
     iAccuracyScaleFactor_d = 20;
+}
+
+void cPositionEstimation::setVehicleParameters(sVehicleParameters &pVehicleParameters_s) {
+    iCombinedVehicleModel_cl.initVehicleParameters(pVehicleParameters_s);
+}
+
+void cPositionEstimation::setDynamicTimeCalcEnabled(bool pDynamicTimeCalcEnabled_b) {
+    iDynamicTimeCalcEnabled_b = pDynamicTimeCalcEnabled_b;
+}
+
+void cPositionEstimation::setLoopRateHz(int pLoopRateHz_i32) {
+    if (pLoopRateHz_i32 > 0) {
+        iLoopRateHz_i32 = pLoopRateHz_i32;
+    }
+}
+
+void cPositionEstimation::setKinematicModelMaxSpeed(double pKinematicModelMaxSpeed_d) {
+    iKinSpeedLimit_d = pKinematicModelMaxSpeed_d;
+    iDefaultKinSpeedLimit_d = pKinematicModelMaxSpeed_d;
+}
+
+void cPositionEstimation::setOriEstimationEnabled(bool pOriEstimationEnabled_b) {
+    iOriEstimationEnabled_b = pOriEstimationEnabled_b;
 }
 
 void cPositionEstimation::setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d) {

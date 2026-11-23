@@ -38,6 +38,12 @@ class cPositionEstimation {
         cPositionEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f, bool pOriEstimationEnabled_b);
         ~cPositionEstimation();
         void initEstimation(bool pDynamicTimeCalcEnabled_b, int pLoopRateHz_i32, sVehicleParameters &pVehicleParameters_s, float pKinematicModelMaxSpeed_f, bool pOriEstimationEnabled_b);
+        // Runtime parameter updates (do not reset the estimation state)
+        void setVehicleParameters(sVehicleParameters &pVehicleParameters_s);
+        void setDynamicTimeCalcEnabled(bool pDynamicTimeCalcEnabled_b);
+        void setLoopRateHz(int pLoopRateHz_i32);
+        void setKinematicModelMaxSpeed(double pKinematicModelMaxSpeed_d);
+        void setOriEstimationEnabled(bool pOriEstimationEnabled_b);
         void setMeasuredValuesVehicleState(double pSteeringAngle_d, double pVehicleSpeed_d);
         void setMeasuredValuesGNSS(double pPositionX_d, double pPositionY_d, double pPositionZ_d, double pYawAngle_d);
         void setMeasuredValuesSLAM(double pPositionX_d, double pPositionY_d, double pPositionZ_d, double pYawAngle_d);

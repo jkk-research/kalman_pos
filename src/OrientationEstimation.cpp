@@ -44,13 +44,13 @@ void cOrientationEstimation::addPosition(double pMeasPosX_d, double pMeasPosY_d,
         iEstPosBufferY_da[iPosBufferIndex_s32] = pEstPosY_d;
         iPosBufferIndex_s32++; 
     } else {
-        memcpy( &(iMeasPosBufferX_da[0]), &(iMeasPosBufferX_da[1]), sizeof(iMeasPosBufferX_da)-1 );
+        memmove( &(iMeasPosBufferX_da[0]), &(iMeasPosBufferX_da[1]), sizeof(iMeasPosBufferX_da) - sizeof(iMeasPosBufferX_da[0]) );
         iMeasPosBufferX_da[iPosBufferIndex_s32 - 1] = pMeasPosX_d;
-        memcpy( &(iMeasPosBufferY_da[0]), &(iMeasPosBufferY_da[1]), sizeof(iMeasPosBufferY_da)-1 );
+        memmove( &(iMeasPosBufferY_da[0]), &(iMeasPosBufferY_da[1]), sizeof(iMeasPosBufferY_da) - sizeof(iMeasPosBufferY_da[0]) );
         iMeasPosBufferY_da[iPosBufferIndex_s32 - 1] = pMeasPosY_d;
-        memcpy( &(iEstPosBufferX_da[0]), &(iEstPosBufferX_da[1]), sizeof(iEstPosBufferX_da)-1 );
+        memmove( &(iEstPosBufferX_da[0]), &(iEstPosBufferX_da[1]), sizeof(iEstPosBufferX_da) - sizeof(iEstPosBufferX_da[0]) );
         iEstPosBufferX_da[iPosBufferIndex_s32 - 1] = pEstPosX_d;
-        memcpy( &(iEstPosBufferY_da[0]), &(iEstPosBufferY_da[1]), sizeof(iEstPosBufferY_da)-1 );
+        memmove( &(iEstPosBufferY_da[0]), &(iEstPosBufferY_da[1]), sizeof(iEstPosBufferY_da) - sizeof(iEstPosBufferY_da[0]) );
         iEstPosBufferY_da[iPosBufferIndex_s32 - 1] = pEstPosY_d;
 
         estimate();
@@ -88,7 +88,6 @@ double cOrientationEstimation::bearingDiffCalc(double pBearing1_d, double pBeari
 }
 
 void cOrientationEstimation::estimate() {
-    double lTmpBearing_d = INVALID_ORIENTATION;
 
     if (iPosBufferIndex_s32 == POS_BUFFER_SIZE){
         //ROS_INFO_STREAM("ROS::OR  ");
@@ -125,7 +124,6 @@ void cOrientationEstimation::estimate() {
 }
 
 void cOrientationEstimation::filterOri() {
-    double lMean_d = 0;
     double lSuMeast_d = 0;
     double lSumMeas_d = 0;
 
@@ -146,7 +144,6 @@ void cOrientationEstimation::filterOriDiff() {
     double lSumFiltered_d = 0;
     double lVariance_d = 0;
     double lStd_d = 0;
-    double lLowerLimit_d = 0;
     double lUpperLimit_d = 0;
 
     if (iMeasEstOriBufferDifValid_b == true){
@@ -160,12 +157,11 @@ void cOrientationEstimation::filterOriDiff() {
             lVariance_d += pow((iMeasEstOriBufferDif_da[i] - lMean_d), 2);
         }
 
-        lVariance_d = lVariance_d * (1 / (ORIENTATION_DIF_BUFFER_SIZE));
+        lVariance_d = lVariance_d / ORIENTATION_DIF_BUFFER_SIZE;
 
         lStd_d = sqrt(lVariance_d);
 
         lUpperLimit_d = lMean_d + 2*lStd_d;
-        lLowerLimit_d = lMean_d - 2*lStd_d;
 
         for (int i = 0; i < (ORIENTATION_DIF_BUFFER_SIZE-4); i++) {
             if ((iMeasEstOriBufferDif_da[i] > lUpperLimit_d) && (iMeasEstOriBufferDif_da[i + 1] > lUpperLimit_d) && (iMeasEstOriBufferDif_da[i + 2] > lUpperLimit_d) && (iMeasEstOriBufferDif_da[i + 3] > lUpperLimit_d)){
@@ -210,7 +206,7 @@ void cOrientationEstimation::filterOriDiff2() {
             lVariance_d += pow((iMeasEstOriBufferDif_da[i] - lMean_d), 2);
         }
 
-        lVariance_d = lVariance_d * (1 / (ORIENTATION_DIF_BUFFER_SIZE)); //(1 / (ORIENTATION_DIF_BUFFER_SIZE - 1));
+        lVariance_d = lVariance_d / ORIENTATION_DIF_BUFFER_SIZE; //(1 / (ORIENTATION_DIF_BUFFER_SIZE - 1));
 
         lStd_d = sqrt(lVariance_d);
 
