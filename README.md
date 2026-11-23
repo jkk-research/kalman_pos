@@ -47,7 +47,7 @@ flowchart LR
 A[ /imu<br/>sensor_msgs/Imu] --> F(kalman_pos)
 B[ /current_pose<br/>geometry_msgs/PoseStamped] --> F
 C[ /vehicle_status<br/>geometry_msgs/TwistStamped] --> F
-S[ /vehicle_steering<br/>std_msgs/Float64<br/>-if legacy_twist is false-] -.-> F
+S[ /vehicle_steering_tire_angle<br/>std_msgs/Float64<br/>-if legacy_twist is false-] -.-> F
 D[ /nova_fix<br/>sensor_msgs/NavSatFix] --> F
 E[ /duro_status<br/>std_msgs/String] --> F
 F -->  G[ /estimated_pose_cog<br/>geometry_msgs/PoseStamped]
@@ -95,14 +95,14 @@ ros2 launch kalman_pos kalman_pos_node.launch.py
   - type: `string` 
   - default value: `vehicle_status`
   - description: the name of the vehicle status topic (subscriber, geometry_msgs::msg::TwistStamped).
-- `vehicle_steering_topic`
+- `vehicle_steering_tire_angle_topic`
   - type: `string`
-  - default value: `vehicle_steering`
-  - description: the name of the steering angle topic (subscriber, std_msgs::msg::Float64). Used only if `legacy_twist` is `false`.
+  - default value: `vehicle_steering_tire_angle`
+  - description: the name of the steered tire (road wheel) angle topic in rad (subscriber, std_msgs::msg::Float64). Used only if `legacy_twist` is `false`. (Not the steering wheel angle: `vehicle_param_swr` is not applied to it.)
 - `legacy_twist`
   - type: `bool`
   - default value: `true`
-  - description: if `true`, `twist.angular.z` of the vehicle status topic contains the steering angle (old structure). If `false`, `twist.angular.z` contains the yaw rate and the steering angle is read from `vehicle_steering_topic`.
+  - description: if `true`, `twist.angular.z` of the vehicle status topic contains the steering wheel angle (old structure). If `false`, `twist.angular.z` contains the yaw rate and the steered tire angle is read from `vehicle_steering_tire_angle_topic`.
 - `gnss_covariance_topic`
   - type: `string`
   - default value: `gps/duro/fix`

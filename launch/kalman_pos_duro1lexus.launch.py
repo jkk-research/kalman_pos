@@ -11,8 +11,8 @@ def generate_launch_description():
                 {"gnss_pose_topic" : "/lexus3/gps/duro/current_pose"},
                 {"slam_pose_topic" : "/lexus3/gps/duro/current_pose"},
                 {"vehicle_status_topic" : "/lexus3/vehicle_status"},
-                {"vehicle_steering_topic": "/lexus3/vehicle_steering"},
-                {"legacy_twist": True}, # True: vehicle_status angular.z = steering angle (old); False: angular.z = yaw rate, steering from vehicle_steering_topic
+                {"vehicle_steering_tire_angle_topic": "/lexus3/vehicle_steering_tire_angle"},
+                {"legacy_twist": True}, # True: vehicle_status angular.z = steering wheel angle (old); False: angular.z = yaw rate, tire angle from vehicle_steering_tire_angle_topic
                 {"gnss_covariance_topic" : "gps/duro/fix"},
                 {"slam_covariance_topic" : "gps/duro/fix"},
                 {"imu_topic" : "/lexus3/gps/duro/imu"},

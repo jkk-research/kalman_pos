@@ -43,9 +43,9 @@ class KalmanPosNode : public rclcpp::Node
             iVehicleStatusMsgArrived_b = false;
             iIMUMsgArriveTime_u64 = 0;
             iVehicleStatusMsgArriveTime_u64 = 0;
-            iVehicleSteeringMsgArrived_b = false;
-            iVehicleSteeringMsgArriveTime_u64 = 0;
-            iVehicleSteeringAngle_d = 0.0;
+            iVehicleSteeringTireAngleMsgArrived_b = false;
+            iVehicleSteeringTireAngleMsgArriveTime_u64 = 0;
+            iVehicleSteeringTireAngle_d = 0.0;
             iROSParamLegacyTwist_b = true;
             iOriEstimationEnabled_b = false;
             iROSParamInvertYawRate_b = false;
@@ -54,9 +54,9 @@ class KalmanPosNode : public rclcpp::Node
             this->declare_parameter<std::string>("gnss_pose_topic", "gps/duro/current_pose");
             this->declare_parameter<std::string>("slam_pose_topic", "gps/duro/current_pose");
             this->declare_parameter<std::string>("vehicle_status_topic", "vehicle_status");
-            this->declare_parameter<std::string>("vehicle_steering_topic", "vehicle_steering");
-            // legacy_twist == true:  vehicle_status twist.angular.z holds the steering angle (old structure)
-            // legacy_twist == false: vehicle_status twist.angular.z holds the yaw rate, the steering angle comes from vehicle_steering_topic (std_msgs/Float64)
+            this->declare_parameter<std::string>("vehicle_steering_tire_angle_topic", "vehicle_steering_tire_angle");
+            // legacy_twist == true:  vehicle_status twist.angular.z holds the steering wheel angle (old structure)
+            // legacy_twist == false: vehicle_status twist.angular.z holds the yaw rate, the steered tire angle [rad] comes from vehicle_steering_tire_angle_topic (std_msgs/Float64)
             this->declare_parameter<bool>("legacy_twist", true);
             this->declare_parameter<std::string>("gnss_covariance_topic", "gps/duro/fix");
             this->declare_parameter<std::string>("slam_covariance_topic", "gps/duro/fix");
@@ -93,7 +93,7 @@ class KalmanPosNode : public rclcpp::Node
             this->get_parameter("gnss_pose_topic", iROSParamGNSSPoseTopic_s);
             this->get_parameter("slam_pose_topic", iROSParamSLAMPoseTopic_s);
             this->get_parameter("vehicle_status_topic", iROSParamVehicleStatusTopic_s);
-            this->get_parameter("vehicle_steering_topic", iROSParamVehicleSteeringTopic_s);
+            this->get_parameter("vehicle_steering_tire_angle_topic", iROSParamVehicleSteeringTireAngleTopic_s);
             this->get_parameter("legacy_twist", iROSParamLegacyTwist_b);
             this->get_parameter("imu_topic", iROSParamImuTopic_s);
             this->get_parameter("est_cog_topic", iROSParamEstimatedPoseCogTopic_s); 
@@ -130,7 +130,7 @@ class KalmanPosNode : public rclcpp::Node
             iROSSubGNSSPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamGNSSPoseTopic_s, 1000, std::bind(&KalmanPosNode::gnssPoseCallback, this, std::placeholders::_1));
             iROSSubSLAMPose_cl = this->create_subscription<geometry_msgs::msg::PoseStamped>(iROSParamSLAMPoseTopic_s, 1000, std::bind(&KalmanPosNode::slamPoseCallback, this, std::placeholders::_1));
             iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::TwistStamped>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
-            iROSSubVehicleSteering_cl = this->create_subscription<std_msgs::msg::Float64>(iROSParamVehicleSteeringTopic_s, 1000, std::bind(&KalmanPosNode::vehicleSteeringCallback, this, std::placeholders::_1));
+            iROSSubVehicleSteeringTireAngle_cl = this->create_subscription<std_msgs::msg::Float64>(iROSParamVehicleSteeringTireAngleTopic_s, 1000, std::bind(&KalmanPosNode::vehicleSteeringTireAngleCallback, this, std::placeholders::_1));
             iROSSubGNSSCovariance_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamGNSSCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::gnssCovarianceCallback, this, std::placeholders::_1));
             iROSSubSLAMCovariance_cl = this->create_subscription<sensor_msgs::msg::NavSatFix>(iROSParamSLAMCovarianceTopic_s, 1000, std::bind(&KalmanPosNode::slamCovarianceCallback, this, std::placeholders::_1));
             iROSSubIMU_cl = this->create_subscription<sensor_msgs::msg::Imu>(iROSParamImuTopic_s, 1000, std::bind(&KalmanPosNode::imuCallback, this, std::placeholders::_1));
@@ -177,7 +177,7 @@ class KalmanPosNode : public rclcpp::Node
             // RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << (1/iROSParamLoopRateHz_i32) * 1000 << " ms"); // NOK
             RCLCPP_INFO_STREAM(this->get_logger(), "Loop rate: " << millisec << " ms");
 
-            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tGNSS Pose Topic: %s\n\tSLAM Pose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tGNSS Available: %d\n\tSLAM Available: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tInvert Yaw Rate: %d\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n\tGNSS Accuracy Limit: %f\n\tSLAM Accuracy Limit: %f\n\tUse Raw Model Only: %d\n\tOri. Est. Enabled: %d\n\tAutonomous Mode Topic: %s\n\tVehicle Steering Topic: %s\n\tLegacy Twist: %d", 
+            RCLCPP_INFO_ONCE(this->get_logger(), "Finalized Parameters:\n\tGNSS Pose Topic: %s\n\tSLAM Pose Topic: %s\n\tVehicle Status Topic: %s\n\tNavSatFix Topic: %s\n\tIMU Topic: %s\n\tEst. CoG. Pos. Topic: %s\n\tEst. Baselink Pos. Topic: %s\n\tEst. Accuracy Topic: %s\n\tLoop Rate [Hz]: %d\n\tGNSS Available: %d\n\tSLAM Available: %d\n\tDyn. Time Calc. Enabled: %d\n\tDo Not Wait For GNSS Msgs.: %d\n\tKinematic Model Max. Speed: %f\n\tMsg. Timeout: %f\n\tInvert Yaw Rate: %d\n\tEst. Trav. Dist. (Odom) Topic: %s\n\tEst. Trav. Dist. (Pos.) Topic: %s\n\tV.P. C1: %f\n\tV.P. C2: %f\n\tV.P. m: %f\n\tV.P. Jz: %f\n\tV.P. L1: %f\n\tV.P. L2: %f\n\tV.P. SWR: %f\n\tGNSS Accuracy Limit: %f\n\tSLAM Accuracy Limit: %f\n\tUse Raw Model Only: %d\n\tOri. Est. Enabled: %d\n\tAutonomous Mode Topic: %s\n\tVehicle Steering Tire Angle Topic: %s\n\tLegacy Twist: %d", 
                                                     iROSParamGNSSPoseTopic_s.c_str(), iROSParamSLAMPoseTopic_s.c_str(), iROSParamVehicleStatusTopic_s.c_str(), 
                                                     iROSParamGNSSCovarianceTopic_s.c_str(), iROSParamImuTopic_s.c_str(), iROSParamEstimatedPoseCogTopic_s.c_str(),  
                                                     iROSParamEstimatedPoseBaselinkTopic_s.c_str(), iROSParamEstimationAccuracyTopic_s.c_str(),
@@ -187,7 +187,7 @@ class KalmanPosNode : public rclcpp::Node
                                                     iROSParamVehicleParamC2_d, iROSParamVehicleParamM_d, iROSParamVehicleParamJz_d,
                                                     iROSParamVehicleParamL1_d, iROSParamVehicleParamL2_d, iROSParamVehicleParamSWR_d,
                                                     iROSParamGNSSAccuracyLimit_d, iROSParamSLAMAccuracyLimit_d, iROSParamUseRawModel_b, iOriEstimationEnabled_b,
-                                                    iROSParamAutonomousModeTopic_s.c_str(), iROSParamVehicleSteeringTopic_s.c_str(), iROSParamLegacyTwist_b);
+                                                    iROSParamAutonomousModeTopic_s.c_str(), iROSParamVehicleSteeringTireAngleTopic_s.c_str(), iROSParamLegacyTwist_b);
 
             RCLCPP_INFO_ONCE(this->get_logger(), "Finalize Initialization");
         }
@@ -208,7 +208,7 @@ class KalmanPosNode : public rclcpp::Node
         std::string iROSParamGNSSCovarianceTopic_s;
         std::string iROSParamSLAMCovarianceTopic_s;
         std::string iROSParamVehicleStatusTopic_s;
-        std::string iROSParamVehicleSteeringTopic_s;
+        std::string iROSParamVehicleSteeringTireAngleTopic_s;
         bool iROSParamLegacyTwist_b;
         bool iROSParamDynamicTimeCalcEnabled_b; 
         bool iROSParamDoNotWaitForPosMsgs_b;
@@ -244,9 +244,9 @@ class KalmanPosNode : public rclcpp::Node
         bool iVehicleStatusMsgArrived_b;
         uint64_t iIMUMsgArriveTime_u64;
         uint64_t iVehicleStatusMsgArriveTime_u64;
-        bool iVehicleSteeringMsgArrived_b;
-        uint64_t iVehicleSteeringMsgArriveTime_u64;
-        double iVehicleSteeringAngle_d;
+        bool iVehicleSteeringTireAngleMsgArrived_b;
+        uint64_t iVehicleSteeringTireAngleMsgArriveTime_u64;
+        double iVehicleSteeringTireAngle_d;
         
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr iROSPubAccuracyMarker_cl;
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr iROSPubEstimatedPoseCog_cl;
@@ -260,7 +260,7 @@ class KalmanPosNode : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr iROSSubSLAMCovariance_cl;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr iROSSubIMU_cl;
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr iROSSubVehicleStatus_cl;
-        rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr iROSSubVehicleSteering_cl;
+        rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr iROSSubVehicleSteeringTireAngle_cl;
         rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr iROSSubAutonomousMode_cl;
 
         std::unique_ptr<tf2_ros::TransformBroadcaster> iEstPosBaselinkTransformBroadcaster_cl;
@@ -329,14 +329,14 @@ class KalmanPosNode : public rclcpp::Node
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
         }
 
-        void vehicleSteeringCallback(const std_msgs::msg::Float64::ConstSharedPtr pMsg_msgp)
+        void vehicleSteeringTireAngleCallback(const std_msgs::msg::Float64::ConstSharedPtr pMsg_msgp)
         {
-            RCLCPP_INFO_ONCE(this->get_logger(), "Vehicle Steering Callback");
+            RCLCPP_INFO_ONCE(this->get_logger(), "Vehicle Steering Tire Angle Callback");
             struct timeval lTimeval_tv;
-            iVehicleSteeringMsgArrived_b = true;
-            iVehicleSteeringAngle_d = pMsg_msgp->data;
+            iVehicleSteeringTireAngleMsgArrived_b = true;
+            iVehicleSteeringTireAngle_d = pMsg_msgp->data;
             gettimeofday(&lTimeval_tv, NULL);
-            iVehicleSteeringMsgArriveTime_u64 =
+            iVehicleSteeringTireAngleMsgArriveTime_u64 =
                 (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
         }
@@ -370,9 +370,9 @@ class KalmanPosNode : public rclcpp::Node
                 (unsigned long long)(lTimeval_tv.tv_sec) * 1000 +
                 (unsigned long long)(lTimeval_tv.tv_usec) / 1000;
 
-            // In the new (non-legacy) structure the steering angle arrives on a separate topic, it must be fresh as well
+            // In the new (non-legacy) structure the steered tire angle arrives on a separate topic, it must be fresh as well
             bool lSteeringOk_b = iROSParamLegacyTwist_b ||
-                (iVehicleSteeringMsgArrived_b && ((lCurrentTime_u64 - iVehicleSteeringMsgArriveTime_u64) < iROSParamMsgTimeout_d));
+                (iVehicleSteeringTireAngleMsgArrived_b && ((lCurrentTime_u64 - iVehicleSteeringTireAngleMsgArriveTime_u64) < iROSParamMsgTimeout_d));
 
             if (  ((lCurrentTime_u64 - iVehicleStatusMsgArriveTime_u64) < iROSParamMsgTimeout_d) &&
                   lSteeringOk_b &&
@@ -405,9 +405,11 @@ class KalmanPosNode : public rclcpp::Node
                 } else {
                     iPositionEstimation_cl.setMeasuredValuesIMU(iROSIMUMsg_msg.linear_acceleration.y, iROSIMUMsg_msg.linear_acceleration.x, iROSIMUMsg_msg.linear_acceleration.z, iROSIMUMsg_msg.angular_velocity.x, iROSIMUMsg_msg.angular_velocity.y, iROSIMUMsg_msg.angular_velocity.z);
                 }
-                // legacy: twist.angular.z = steering angle; new: twist.angular.z = yaw rate (not used here, IMU yaw rate is used), steering from vehicle_steering_topic
-                double lSteeringAngle_d = iROSParamLegacyTwist_b ? iROSVehicleStatusMsg_msg.twist.angular.z : iVehicleSteeringAngle_d;
-                iPositionEstimation_cl.setMeasuredValuesVehicleState(lSteeringAngle_d, iROSVehicleStatusMsg_msg.twist.linear.x);
+                // legacy: twist.angular.z = steering wheel angle [rad]
+                // new:    twist.angular.z = yaw rate (not used here, IMU yaw rate is used), steered tire angle [rad] from vehicle_steering_tire_angle_topic
+                // The model expects the steering wheel angle (it divides by vehicle_param_swr), so the tire angle is converted back to steering wheel angle
+                double lSteeringWheelAngle_d = iROSParamLegacyTwist_b ? iROSVehicleStatusMsg_msg.twist.angular.z : (iVehicleSteeringTireAngle_d * iROSParamVehicleParamSWR_d);
+                iPositionEstimation_cl.setMeasuredValuesVehicleState(lSteeringWheelAngle_d, iROSVehicleStatusMsg_msg.twist.linear.x);
 
                 //int32_t lPrevDrivingMode_i32 = iDrivingMode_i32;
                 //iDrivingMode_i32 = 0;//iROSVehicleStatusMsg_msg.drivemode;
@@ -640,10 +642,10 @@ class KalmanPosNode : public rclcpp::Node
                     iROSParamVehicleStatusTopic_s = param.as_string();
                     iROSSubVehicleStatus_cl = this->create_subscription<geometry_msgs::msg::TwistStamped>(iROSParamVehicleStatusTopic_s, 1000, std::bind(&KalmanPosNode::vehicleCallback, this, std::placeholders::_1));
                 }
-                if (param.get_name() == "vehicle_steering_topic")
+                if (param.get_name() == "vehicle_steering_tire_angle_topic")
                 {
-                    iROSParamVehicleSteeringTopic_s = param.as_string();
-                    iROSSubVehicleSteering_cl = this->create_subscription<std_msgs::msg::Float64>(iROSParamVehicleSteeringTopic_s, 1000, std::bind(&KalmanPosNode::vehicleSteeringCallback, this, std::placeholders::_1));
+                    iROSParamVehicleSteeringTireAngleTopic_s = param.as_string();
+                    iROSSubVehicleSteeringTireAngle_cl = this->create_subscription<std_msgs::msg::Float64>(iROSParamVehicleSteeringTireAngleTopic_s, 1000, std::bind(&KalmanPosNode::vehicleSteeringTireAngleCallback, this, std::placeholders::_1));
                 }
                 if (param.get_name() == "legacy_twist")
                 {
