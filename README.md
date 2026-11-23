@@ -222,7 +222,7 @@ ros2 launch kalman_pos kalman_pos_node.launch.py
 
 ## Rosbag
 
-Download: [jkk-research.github.io/dataset](https://jkk-research.github.io/dataset)
+Download: [jkk-research.github.io/dataset](https://jkk-research.github.io/latest/dataset/)
 
 Direct download of zipped MCAPs: [download zip (~15 MB)](https://laesze-my.sharepoint.com/:u:/g/personal/herno_o365_sze_hu/EVofDCG_ORZJh--XTVLFsFEBOUYB1eAbHAzdTVDdf19Y9g?download=1)
 
